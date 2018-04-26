@@ -68,7 +68,7 @@ int main( void )
 #include "mbedtls/rsa.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/ecdsa.h"
-#include "mbedtls/ecdh.h"
+#include "mbedtls/ecdhopt.h"
 #include "mbedtls/error.h"
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
@@ -231,7 +231,7 @@ typedef struct {
          aes_cbc, aes_gcm, aes_ccm, aes_cmac, des3_cmac,
          camellia, blowfish,
          havege, ctr_drbg, hmac_drbg,
-         rsa, dhm, ecdsa, ecdh;
+         rsa, dhm, ecdsa, ecdh, ecdhopt;
 } todo_list;
 
 int main( int argc, char *argv[] )
@@ -300,6 +300,8 @@ int main( int argc, char *argv[] )
                 todo.ecdsa = 1;
             else if( strcmp( argv[i], "ecdh" ) == 0 )
                 todo.ecdh = 1;
+      	    else if( strcmp( argv[i], "ecdhopt" ) == 0 )
+		            todo.ecdhopt = 1;
             else
             {
                 mbedtls_printf( "Unrecognized option: %s\n", argv[i] );
@@ -887,6 +889,34 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
     mbedtls_memory_buffer_alloc_free();
+#endif
+
+#if defined(MBEDTLS_ECDH_C)
+    if( todo.ecdhopt )
+    {
+      mbedtls_ecdhopt_context ecdhopt;
+      mbedtls_ecdhopt_curve g = MBEDTLS_ECP_DP_CURVE25519;
+    	unsigned char ske[64];
+      size_t skelen;
+
+      mbedtls_ecdhopt_init( &ecdhopt );
+      if( mbedtls_ecdhopt_initiator(&ecdhopt, g, &skelen, ske, sizeof(ske), myrand, NULL) != 0)
+      {
+        mbedtls_exit( 1 );
+      }
+
+      mbedtls_ecdhopt_init( &ecdhopt );
+      mbedtls_snprintf( title, sizeof( title ), "ECDHopt-X25519-cli");
+	    TIME_PUBLIC( title, "handshake",
+        unsigned char *buf = ske;
+        unsigned char cke[40] = {0};
+        size_t ckelen;
+        ret |= mbedtls_ecdhopt_read_initiator(&ecdhopt, &buf, ske+skelen);
+        ret |= mbedtls_ecdhopt_responder( &ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL );
+        ret |= mbedtls_ecdhopt_shared_secret( &ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL ) );
+
+      mbedtls_ecdhopt_free( &ecdhopt );
+    }
 #endif
 
 #if defined(_WIN32)
