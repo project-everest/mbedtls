@@ -111,7 +111,7 @@ int mbedtls_ecdhopt_read_initiator( mbedtls_ecdhopt_context *ctx,
   int ret;
   const mbedtls_ecp_curve_info *curve_info;
 
-  if( ( ret = mbedtls_ecp_tls_read_curve_info(&curve_info, buf, blen)) != 0)
+  if( ( ret = mbedtls_ecp_tls_read_curve_info( &curve_info, buf, blen )) != 0)
     return( ret );
 
   if( curve_info->grp_id == MBEDTLS_ECP_DP_CURVE25519 )
@@ -124,7 +124,7 @@ int mbedtls_ecdhopt_read_initiator( mbedtls_ecdhopt_context *ctx,
     if( ( *(*buf)++ != 32 ) )
       return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    memcpy(ctx->ctx.x25519.peer_point, *buf, 32);
+    memcpy( ctx->ctx.x25519.peer_point, *buf, 32 );
     *buf += 32;
     return( 0 );
   }
@@ -176,7 +176,7 @@ int mbedtls_ecdhopt_responder( mbedtls_ecdhopt_context *ctx, size_t *olen,
   else
   {
     ctx->ctx.ec.point_format = ctx->point_format;
-    return mbedtls_ecdh_make_public(&ctx->ctx.ec, olen, buf, blen, f_rng, p_rng);
+    return mbedtls_ecdh_make_public( &ctx->ctx.ec, olen, buf, blen, f_rng, p_rng );
   }
 }
 
@@ -194,7 +194,7 @@ int mbedtls_ecdhopt_read_responder( mbedtls_ecdhopt_context *ctx,
   }
   else
   {
-    return mbedtls_ecdh_read_public(&ctx->ctx.ec, buf, blen);
+    return mbedtls_ecdh_read_public( &ctx->ctx.ec, buf, blen );
   }
 }
 
@@ -222,7 +222,7 @@ int mbedtls_ecdhopt_shared_secret( mbedtls_ecdhopt_context *ctx, size_t *olen,
   }
   else
   {
-    return mbedtls_ecdh_calc_secret(&ctx->ctx.ec, olen, buf, blen, f_rng, p_rng);
+    return mbedtls_ecdh_calc_secret( &ctx->ctx.ec, olen, buf, blen, f_rng, p_rng );
   }
 }
 
