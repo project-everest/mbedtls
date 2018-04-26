@@ -92,7 +92,7 @@ int main( void )
 #define DFL_MAX_VERSION         -1
 #define DFL_ARC4                -1
 #define DFL_SHA1                -1
-#define DFL_AUTH_MODE           -1
+#define DFL_AUTH_MODE           MBEDTLS_SSL_VERIFY_NONE
 #define DFL_MFL_CODE            MBEDTLS_SSL_MAX_FRAG_LEN_NONE
 #define DFL_TRUNC_HMAC          -1
 #define DFL_RECSPLIT            -1

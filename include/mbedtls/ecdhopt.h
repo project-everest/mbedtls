@@ -33,6 +33,8 @@
 extern "C" {
 #endif
 
+#define MBEDTLS_ECP_TLS_CURVE25519 0x1d
+
 typedef mbedtls_ecdh_side mbedtls_ecdhopt_side;
 typedef mbedtls_ecp_group_id mbedtls_ecdhopt_curve;
 typedef mbedtls_ecp_curve_info mbedtls_ecdhopt_curve_info;
@@ -48,6 +50,7 @@ typedef struct {
 
 typedef struct {
   mbedtls_ecdhopt_curve curve;
+  int point_format;
   union {
     mbedtls_ecdh_context ec;
     mbedtls_ecdhopt_x25519_context x25519;

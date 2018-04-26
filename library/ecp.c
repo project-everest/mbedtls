@@ -129,6 +129,9 @@ typedef enum
  */
 static const mbedtls_ecp_curve_info ecp_supported_curves[] =
 {
+#if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+    { MBEDTLS_ECP_DP_CURVE25519,   29,     256,    "x25519"            },
+#endif
 #if defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED)
     { MBEDTLS_ECP_DP_SECP521R1,    25,     521,    "secp521r1"         },
 #endif
@@ -596,18 +599,15 @@ int mbedtls_ecp_tls_write_point( const mbedtls_ecp_group *grp, const mbedtls_ecp
     return( 0 );
 }
 
-/*
- * Set a group from an ECParameters record (RFC 4492)
- */
-int mbedtls_ecp_tls_read_group( mbedtls_ecp_group *grp, const unsigned char **buf, size_t len )
+int mbedtls_ecp_tls_read_curve_info( mbedtls_ecp_curve_info const* *curve_info,
+  const unsigned char **buf, size_t blen )
 {
     uint16_t tls_id;
-    const mbedtls_ecp_curve_info *curve_info;
 
     /*
      * We expect at least three bytes (see below)
      */
-    if( len < 3 )
+    if( blen < 3 )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     /*
@@ -623,8 +623,22 @@ int mbedtls_ecp_tls_read_group( mbedtls_ecp_group *grp, const unsigned char **bu
     tls_id <<= 8;
     tls_id |= *(*buf)++;
 
-    if( ( curve_info = mbedtls_ecp_curve_info_from_tls_id( tls_id ) ) == NULL )
+    if( ( *curve_info = mbedtls_ecp_curve_info_from_tls_id( tls_id ) ) == NULL )
         return( MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE );
+
+    return( 0 );
+}
+
+/*
+ * Set a group from an ECParameters record (RFC 4492)
+ */
+int mbedtls_ecp_tls_read_group( mbedtls_ecp_group *grp, const unsigned char **buf, size_t len )
+{
+    int ret;
+    const mbedtls_ecp_curve_info *curve_info;
+
+    if( (ret = mbedtls_ecp_tls_read_curve_info(&curve_info, buf, len)) != 0)
+      return( ret );
 
     return mbedtls_ecp_group_load( grp, curve_info->grp_id );
 }

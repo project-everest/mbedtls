@@ -532,6 +532,12 @@ int mbedtls_ecp_tls_write_point( const mbedtls_ecp_group *grp, const mbedtls_ecp
 int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id id );
 
 /**
+ * FIXME(adl) write doxygen
+ */
+int mbedtls_ecp_tls_read_curve_info( mbedtls_ecp_curve_info const* *curve_info,
+                         const unsigned char **buf, size_t len );
+
+/**
  * \brief           This function sets a group from a TLS ECParameters record.
  *
  * \note            \p buf is updated to point right after the ECParameters record
