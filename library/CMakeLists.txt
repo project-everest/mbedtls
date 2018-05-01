@@ -57,6 +57,9 @@ set(src_crypto
     version.c
     version_features.c
     xtea.c
+    x25519.c
+    uint128_wrapper.c  
+    ecdhopt.c
 )
 
 set(src_x509

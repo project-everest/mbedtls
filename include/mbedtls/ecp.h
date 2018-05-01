@@ -532,8 +532,16 @@ int mbedtls_ecp_tls_write_point( const mbedtls_ecp_group *grp, const mbedtls_ecp
 int mbedtls_ecp_group_load( mbedtls_ecp_group *grp, mbedtls_ecp_group_id id );
 
 /**
- * FIXME(adl) write doxygen
- */
+* \brief           This function extracts EC parameters from a raw buffer \p buf
+*                  via \c mbedtls_ecp_curve_info_from_tls_id.
+*
+* \param curve_info Populated with the associated curve information on success.
+* \param buf       The address of the pointer to the start of the input buffer.
+* \param len       The length of the buffer.
+*
+* \return          \c 0 on success,
+* \return          An \c MBEDTLS_ERR_ECP_XXX error code on failure.
+*/
 int mbedtls_ecp_tls_read_curve_info( mbedtls_ecp_curve_info const* *curve_info,
                          const unsigned char **buf, size_t len );
 

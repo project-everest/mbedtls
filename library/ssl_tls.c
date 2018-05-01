@@ -1199,8 +1199,7 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
         *(p++) = (unsigned char)( zlen      );
         p += zlen;
 
-        // FIXME(adl)
-        //MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z", &ssl->handshake->ecdh_ctx.z );
+        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Secret: ", ssl->handshake->ecdh_ctx.ctx.x25519.our_secret, 32 );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */

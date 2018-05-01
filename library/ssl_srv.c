@@ -3024,8 +3024,7 @@ curve_matching_done:
         p += len;
         n += len;
 
-        // FIXME(adl)
-        //MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q ", &ssl->handshake->ecdh_ctx.Q );
+        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Peer: ", ssl->handshake->ecdh_ctx.ctx.x25519.peer_point, 32 );
     }
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__ECDHE_ENABLED */
 
@@ -3513,8 +3512,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
         }
 
-        // FIXME(adl) TODO(cw)
-        //MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp ", &ssl->handshake->ecdh_ctx.Qp );
+        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Peer: ", ssl->handshake->ecdh_ctx.ctx.x25519.peer_point, 32 );
 
         if( ( ret = mbedtls_ecdhopt_shared_secret( &ssl->handshake->ecdh_ctx,
                                       &ssl->handshake->pmslen,
@@ -3526,8 +3524,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_CS );
         }
 
-        // FIXME(adl) TODO(cw)
-        //MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z  ", &ssl->handshake->ecdh_ctx.z );
+        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Secret: ", ssl->handshake->ecdh_ctx.ctx.x25519.our_secret, 32 );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -3628,8 +3625,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
         }
 
-        // FIXME(adl) TODO(cw)
-        //MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp ", &ssl->handshake->ecdh_ctx.Qp );
+        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Peer: ", ssl->handshake->ecdh_ctx.ctx.x25519.peer_point, 32 );
 
         if( ( ret = mbedtls_ssl_psk_derive_premaster( ssl,
                         ciphersuite_info->key_exchange ) ) != 0 )

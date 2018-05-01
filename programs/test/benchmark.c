@@ -96,7 +96,7 @@ int main( void )
     "arc4, des3, des, camellia, blowfish,\n"                            \
     "aes_cbc, aes_gcm, aes_ccm, aes_cmac, des3_cmac,\n"                 \
     "havege, ctr_drbg, hmac_drbg\n"                                     \
-    "rsa, dhm, ecdsa, ecdh.\n"
+    "rsa, dhm, ecdsa, ecdh, ecdhopt.\n"
 
 #if defined(MBEDTLS_ERROR_C)
 #define PRINT_ERROR                                                     \
@@ -300,8 +300,8 @@ int main( int argc, char *argv[] )
                 todo.ecdsa = 1;
             else if( strcmp( argv[i], "ecdh" ) == 0 )
                 todo.ecdh = 1;
-      	    else if( strcmp( argv[i], "ecdhopt" ) == 0 )
-		            todo.ecdhopt = 1;
+            else if( strcmp( argv[i], "ecdhopt" ) == 0 )
+                todo.ecdhopt = 1;
             else
             {
                 mbedtls_printf( "Unrecognized option: %s\n", argv[i] );
@@ -896,7 +896,7 @@ int main( int argc, char *argv[] )
     {
       mbedtls_ecdhopt_context ecdhopt;
       mbedtls_ecdhopt_curve g = MBEDTLS_ECP_DP_CURVE25519;
-    	unsigned char ske[64];
+      unsigned char ske[64];
       size_t skelen;
 
       mbedtls_ecdhopt_init( &ecdhopt );
@@ -907,7 +907,7 @@ int main( int argc, char *argv[] )
 
       mbedtls_ecdhopt_init( &ecdhopt );
       mbedtls_snprintf( title, sizeof( title ), "ECDHopt-X25519-cli");
-	    TIME_PUBLIC( title, "handshake",
+      TIME_PUBLIC( title, "handshake",
         unsigned char *buf = ske;
         unsigned char cke[40] = {0};
         size_t ckelen;

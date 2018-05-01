@@ -89,7 +89,7 @@ void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
       *buf++ = 32;
 
       base[0] = 9; // generator of x25519
-      Hacl_Curve25519_crypto_scalarmult( buf, ctx.our_secret, base );
+      Curve25519_crypto_scalarmult( buf, ctx.our_secret, base );
 
       base[0] = 0;
       if( memcmp( buf, base, 32) == 0 )
@@ -143,8 +143,12 @@ int mbedtls_ecdhopt_read_initiator( mbedtls_ecdhopt_context *ctx,
 }
 
 int mbedtls_ecdhopt_use_static_key( mbedtls_ecdhopt_context *ctx,
-                     const mbedtls_ecp_keypair *key, mbedtls_ecdhopt_side side )
+                      const mbedtls_ecp_keypair *key, mbedtls_ecdhopt_side side )
 {
+  /* Squelch unused variable warnings. */
+  (void)(ctx);
+  (void)(key);
+  (void)(side);
   return 1;
 }
 
@@ -165,7 +169,7 @@ int mbedtls_ecdhopt_responder( mbedtls_ecdhopt_context *ctx, size_t *olen,
     *buf++ = 32;
 
     base[0] = 9; // generator of x25519
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret, base );
+    Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret, base );
 
     base[0] = 0;
     if( memcmp( buf, base, 32) == 0 )
@@ -210,7 +214,7 @@ int mbedtls_ecdhopt_shared_secret( mbedtls_ecdhopt_context *ctx, size_t *olen,
     if( blen < *olen )
         return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret,
+    Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret,
       ctx->ctx.x25519.peer_point);
 
     // Wipe the DH secret and don't let the peer chose a small subgroup point
