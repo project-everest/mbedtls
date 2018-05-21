@@ -57,8 +57,7 @@ set(src_crypto
     version.c
     version_features.c
     xtea.c
-    x25519.c
-    uint128_wrapper.c  
+    Hacl_Curve25519.c
     ecdhopt.c
 )
 

@@ -29,7 +29,7 @@
 #if defined(MBEDTLS_ECDH_C)
 
 #include "mbedtls/ecdhopt.h"
-#include "mbedtls/x25519.h"
+#include "Hacl_Curve25519.h"
 
 #include <string.h>
 
@@ -89,7 +89,7 @@ void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
       *buf++ = 32;
 
       base[0] = 9; // generator of x25519
-      Curve25519_crypto_scalarmult( buf, ctx.our_secret, base );
+      Hacl_Curve25519_crypto_scalarmult( buf, ctx.our_secret, base );
 
       base[0] = 0;
       if( memcmp( buf, base, 32) == 0 )
@@ -169,7 +169,7 @@ int mbedtls_ecdhopt_responder( mbedtls_ecdhopt_context *ctx, size_t *olen,
     *buf++ = 32;
 
     base[0] = 9; // generator of x25519
-    Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret, base );
+    Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret, base );
 
     base[0] = 0;
     if( memcmp( buf, base, 32) == 0 )
@@ -214,7 +214,7 @@ int mbedtls_ecdhopt_shared_secret( mbedtls_ecdhopt_context *ctx, size_t *olen,
     if( blen < *olen )
         return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
-    Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret,
+    Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret,
       ctx->ctx.x25519.peer_point);
 
     // Wipe the DH secret and don't let the peer chose a small subgroup point
