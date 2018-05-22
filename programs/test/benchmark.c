@@ -908,10 +908,10 @@ int main( int argc, char *argv[] )
       mbedtls_ecdhopt_init( &ecdhopt );
       mbedtls_snprintf( title, sizeof( title ), "ECDHopt-X25519-cli");
       TIME_PUBLIC( title, "handshake",
-        unsigned char *buf = ske;
+        const unsigned char *cbuf = ske;
         unsigned char cke[40] = {0};
         size_t ckelen;
-        ret |= mbedtls_ecdhopt_read_initiator(&ecdhopt, &buf, ske+skelen);
+        ret |= mbedtls_ecdhopt_read_initiator(&ecdhopt, &cbuf, ske+skelen);
         ret |= mbedtls_ecdhopt_responder( &ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL );
         ret |= mbedtls_ecdhopt_shared_secret( &ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL ) );
 
