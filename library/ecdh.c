@@ -113,7 +113,7 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
 }
 
 /*
- * Setup and write the ServerKeyExhange parameters (RFC 4492)
+ * Setup and write the ServerKeyExchange parameters (RFC 4492)
  *      struct {
  *          ECParameters    curve_params;
  *          ECPoint         public;
