@@ -906,7 +906,7 @@ int main( int argc, char *argv[] )
       }
 
       mbedtls_ecdhopt_init( &ecdhopt );
-      mbedtls_snprintf( title, sizeof( title ), "ECDHopt-X25519-cli");
+      mbedtls_snprintf( title, sizeof( title ), "ECDHopt-X25519-client");
       TIME_PUBLIC( title, "handshake",
         const unsigned char *cbuf = ske;
         unsigned char cke[40] = {0};
@@ -914,8 +914,23 @@ int main( int argc, char *argv[] )
         ret |= mbedtls_ecdhopt_read_initiator(&ecdhopt, &cbuf, ske+skelen);
         ret |= mbedtls_ecdhopt_responder( &ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL );
         ret |= mbedtls_ecdhopt_shared_secret( &ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL ) );
+      mbedtls_ecdhopt_free(&ecdhopt);
 
-      mbedtls_ecdhopt_free( &ecdhopt );
+      mbedtls_ecdhopt_init(&ecdhopt);
+      if (mbedtls_ecdhopt_initiator(&ecdhopt, g, &skelen, ske, sizeof(ske), myrand, NULL) != 0)
+      {
+        mbedtls_exit(1);
+      }
+
+      mbedtls_snprintf(title, sizeof(title), "ECDHopt-X25519-server");
+      TIME_PUBLIC(title, "handshake",
+        unsigned char *cbuf = ske;
+        unsigned char cke[40] = { 0 };
+        size_t ckelen;
+        ret |= mbedtls_ecdhopt_initiator(&ecdhopt, g, &ckelen, cbuf, sizeof(ske), myrand, NULL);
+        ret |= mbedtls_ecdhopt_read_responder(&ecdhopt, cbuf, sizeof(ske));
+        ret |= mbedtls_ecdhopt_shared_secret(&ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL); );
+      mbedtls_ecdhopt_free(&ecdhopt);
     }
 #endif
 

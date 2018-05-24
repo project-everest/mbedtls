@@ -57,7 +57,7 @@ void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
 }
 
 /*
- * Setup and write the ServerKeyExhange parameters (RFC 4492)
+ * Setup and write the ServerKeyExchange parameters (RFC 4492)
  *      struct {
  *          ECParameters    curve_params;
  *          ECPoint         public;
@@ -191,6 +191,12 @@ int mbedtls_ecdhopt_read_responder( mbedtls_ecdhopt_context *ctx,
   {
     if(blen < 33)
       return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
+    if (*buf++ != MBEDTLS_ECP_TLS_NAMED_CURVE)
+      return(MBEDTLS_ERR_ECP_BAD_INPUT_DATA);
+    if (*buf++ != MBEDTLS_ECP_TLS_CURVE25519 >> 8)
+      return(MBEDTLS_ERR_ECP_BAD_INPUT_DATA);
+    if (*buf++ != (MBEDTLS_ECP_TLS_CURVE25519 & 0xFF))
+      return(MBEDTLS_ERR_ECP_BAD_INPUT_DATA);
     if( ( *buf++ != 32 ) )
       return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
     memcpy( ctx->ctx.x25519.peer_point, buf, 32 );
