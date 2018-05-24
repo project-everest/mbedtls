@@ -101,7 +101,7 @@ int mbedtls_ecdhopt_initiator( mbedtls_ecdhopt_context *ctx,
                       void *p_rng );
 
 /**
- * \brief           This function parses and processes a TLS ServerKeyExhange
+ * \brief           This function parses and processes a TLS ServerKeyExchange
  *                  payload.
  *
  *                  This is the first function used by a TLS client for ECDHE
