@@ -188,22 +188,22 @@ bool FStar_UInt128_eq(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 
 bool FStar_UInt128_gt(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
-  return a.high > b.high || a.high == b.high && a.low > b.low;
+  return a.high > b.high || (a.high == b.high && a.low > b.low);
 }
 
 bool FStar_UInt128_lt(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
-  return a.high < b.high || a.high == b.high && a.low < b.low;
+  return a.high < b.high || (a.high == b.high && a.low < b.low);
 }
 
 bool FStar_UInt128_gte(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
-  return a.high > b.high || a.high == b.high && a.low >= b.low;
+  return a.high > b.high || (a.high == b.high && a.low >= b.low);
 }
 
 bool FStar_UInt128_lte(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
-  return a.high < b.high || a.high == b.high && a.low <= b.low;
+  return a.high < b.high || (a.high == b.high && a.low <= b.low);
 }
 
 FStar_UInt128_uint128 FStar_UInt128_eq_mask(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
