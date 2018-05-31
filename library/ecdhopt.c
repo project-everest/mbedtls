@@ -142,14 +142,31 @@ int mbedtls_ecdhopt_read_initiator( mbedtls_ecdhopt_context *ctx,
   }
 }
 
-int mbedtls_ecdhopt_use_static_key( mbedtls_ecdhopt_context *ctx,
+int mbedtls_ecdhopt_use_static_key( mbedtls_ecdhopt_context *octx,
                       const mbedtls_ecp_keypair *key, mbedtls_ecdhopt_side side )
 {
-  /* Squelch unused variable warnings. */
-  (void)(ctx);
-  (void)(key);
-  (void)(side);
-  return 1;
+  if( key->grp.id == MBEDTLS_ECP_DP_CURVE25519 )
+  {
+    mbedtls_ecdhopt_x25519_context ctx = octx->ctx.x25519;
+    octx->curve = MBEDTLS_ECP_DP_CURVE25519;
+
+    switch (side) {
+    case MBEDTLS_ECDH_THEIRS:
+      memcpy( ctx.peer_point, &key->Q, 32 );
+      return( 0 );
+    case MBEDTLS_ECDH_OURS:
+      memcpy( ctx.our_secret, &key->d, 32 ); // multiply by &key->Q or base?
+      return( 0 );
+    default:
+      return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+    }
+
+    return ( 0 );
+  }
+  else
+  {
+    return mbedtls_ecdh_get_params( &octx->ctx.ec, key, side );
+  }
 }
 
 int mbedtls_ecdhopt_responder( mbedtls_ecdhopt_context *ctx, size_t *olen,
