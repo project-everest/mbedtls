@@ -46,13 +46,15 @@ void mbedtls_ecdhopt_init( mbedtls_ecdhopt_context *ctx )
  */
 void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
 {
-    if( ctx == NULL ) return;
-    switch(ctx->curve)
+    if( ctx == NULL )
+        return;
+
+    switch( ctx->curve )
     {
-      case MBEDTLS_ECP_DP_CURVE25519:
-        break;
-      default:
-        mbedtls_ecdh_free(&ctx->ctx.ec);
+        case MBEDTLS_ECP_DP_CURVE25519:
+            break;
+        default:
+            mbedtls_ecdh_free( &ctx->ctx.ec );
     }
 }
 
@@ -72,74 +74,75 @@ void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
     octx->curve = g;
     if( g == MBEDTLS_ECP_DP_CURVE25519 )
     {
-      uint8_t base[32] = {0};
-      int ret;
-      mbedtls_ecdhopt_x25519_context ctx = octx->ctx.x25519;
+          uint8_t base[32] = {0};
+          int ret;
+          mbedtls_ecdhopt_x25519_context ctx = octx->ctx.x25519;
 
-      if( ( ret = f_rng( p_rng, ctx.our_secret, 32 ) ) != 0)
-        return ret;
+          if( ( ret = f_rng( p_rng, ctx.our_secret, 32 ) ) != 0 )
+              return ret;
 
-      *olen = 36;
-      if( blen < *olen )
-          return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
+          *olen = 36;
+          if( blen < *olen )
+          if( blen < *olen )
+              return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
-      *buf++ = MBEDTLS_ECP_TLS_NAMED_CURVE;
-      *buf++ = MBEDTLS_ECP_TLS_CURVE25519 >> 8;
-      *buf++ = MBEDTLS_ECP_TLS_CURVE25519 & 0xFF;
-      *buf++ = 32;
+          *buf++ = MBEDTLS_ECP_TLS_NAMED_CURVE;
+          *buf++ = MBEDTLS_ECP_TLS_CURVE25519 >> 8;
+          *buf++ = MBEDTLS_ECP_TLS_CURVE25519 & 0xFF;
+          *buf++ = 32;
 
-      base[0] = 9; // generator of x25519
-      Hacl_Curve25519_crypto_scalarmult( buf, ctx.our_secret, base );
+          base[0] = 9; // generator of x25519
+          Hacl_Curve25519_crypto_scalarmult( buf, ctx.our_secret, base );
 
-      base[0] = 0;
-      if( memcmp( buf, base, 32) == 0 )
-        return MBEDTLS_ERR_ECP_RANDOM_FAILED;
+          base[0] = 0;
+          if( memcmp( buf, base, 32) == 0 )
+              return MBEDTLS_ERR_ECP_RANDOM_FAILED;
 
-      return( 0 );
+        return( 0 );
     }
     else
     {
-      octx->ctx.ec.point_format = octx->point_format;
-      return mbedtls_ecdh_make_params( &octx->ctx.ec, olen, buf, blen, f_rng, p_rng );
+          octx->ctx.ec.point_format = octx->point_format;
+          return mbedtls_ecdh_make_params( &octx->ctx.ec, olen, buf, blen, f_rng, p_rng );
     }
 }
 
 int mbedtls_ecdhopt_read_initiator( mbedtls_ecdhopt_context *ctx,
                       const unsigned char **buf, const unsigned char *end )
 {
-  size_t blen = end - *buf;
-  int ret;
-  const mbedtls_ecp_curve_info *curve_info;
+    size_t blen = end - *buf;
+    int ret;
+    const mbedtls_ecp_curve_info *curve_info;
 
-  if( ( ret = mbedtls_ecp_tls_read_curve_info( &curve_info, buf, blen )) != 0)
-    return( ret );
+    if( ( ret = mbedtls_ecp_tls_read_curve_info( &curve_info, buf, blen )) != 0)
+        return( ret );
 
-  if( curve_info->grp_id == MBEDTLS_ECP_DP_CURVE25519 )
-  {
-    ctx->curve = MBEDTLS_ECP_DP_CURVE25519;
+    if( curve_info->grp_id == MBEDTLS_ECP_DP_CURVE25519 )
+    {
+        ctx->curve = MBEDTLS_ECP_DP_CURVE25519;
 
-    if( end - *buf < 33 )
-      return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+        if( end - *buf < 33 )
+            return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    if( ( *(*buf)++ != 32 ) )
-      return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+        if( ( *(*buf)++ != 32 ) )
+            return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    memcpy( ctx->ctx.x25519.peer_point, *buf, 32 );
-    *buf += 32;
-    return( 0 );
-  }
-  else
-  {
-    ctx->curve = curve_info->grp_id;
+        memcpy( ctx->ctx.x25519.peer_point, *buf, 32 );
+        *buf += 32;
+        return( 0 );
+    }
+    else
+    {
+        ctx->curve = curve_info->grp_id;
 
-    if ( ( ret = mbedtls_ecp_group_load( &ctx->ctx.ec.grp, curve_info->grp_id )) != 0 )
-      return( ret );
+        if( ( ret = mbedtls_ecp_group_load( &ctx->ctx.ec.grp, curve_info->grp_id )) != 0 )
+            return( ret );
 
-    if( ( ret = mbedtls_ecp_tls_read_point( &ctx->ctx.ec.grp, &ctx->ctx.ec.Qp, buf, end - *buf ) ) != 0 )
-      return( ret );
+        if( ( ret = mbedtls_ecp_tls_read_point( &ctx->ctx.ec.grp, &ctx->ctx.ec.Qp, buf, end - *buf ) ) != 0 )
+            return( ret );
 
-    return ( 0 );
-  }
+        return( 0 );
+    }
 }
 
 int mbedtls_ecdhopt_use_static_key( mbedtls_ecdhopt_context *octx,
@@ -174,49 +177,49 @@ int mbedtls_ecdhopt_responder( mbedtls_ecdhopt_context *ctx, size_t *olen,
                       int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng )
 {
-  if( ctx == NULL )
-      return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+    if( ctx == NULL )
+        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-  if(ctx->curve == MBEDTLS_ECP_DP_CURVE25519)
-  {
-    unsigned char base[32] = {0};
-    *olen = 33;
-    if( blen < *olen )
-        return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
-    *buf++ = 32;
+    if( ctx->curve == MBEDTLS_ECP_DP_CURVE25519 )
+    {
+        unsigned char base[32] = {0};
+        *olen = 33;
+        if( blen < *olen )
+            return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
+        *buf++ = 32;
 
-    base[0] = 9; // generator of x25519
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret, base );
+        base[0] = 9; // generator of x25519
+        Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret, base );
 
-    base[0] = 0;
-    if( memcmp( buf, base, 32) == 0 )
-      return MBEDTLS_ERR_ECP_RANDOM_FAILED;
+        base[0] = 0;
+        if( memcmp( buf, base, 32) == 0 )
+            return MBEDTLS_ERR_ECP_RANDOM_FAILED;
 
-    return ( 0 );
-  }
-  else
-  {
-    ctx->ctx.ec.point_format = ctx->point_format;
-    return mbedtls_ecdh_make_public( &ctx->ctx.ec, olen, buf, blen, f_rng, p_rng );
-  }
+        return( 0 );
+    }
+    else
+    {
+        ctx->ctx.ec.point_format = ctx->point_format;
+        return mbedtls_ecdh_make_public( &ctx->ctx.ec, olen, buf, blen, f_rng, p_rng );
+    }
 }
 
 int mbedtls_ecdhopt_read_responder( mbedtls_ecdhopt_context *ctx,
                       const unsigned char *buf, size_t blen )
 {
-  if( ctx->curve == MBEDTLS_ECP_DP_CURVE25519 )
-  {
-    if(blen < 33)
-      return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
-    if( ( *buf++ != 32 ) )
-      return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-    memcpy( ctx->ctx.x25519.peer_point, buf, 32 );
-    return ( 0 );
-  }
-  else
-  {
-    return mbedtls_ecdh_read_public( &ctx->ctx.ec, buf, blen );
-  }
+    if( ctx->curve == MBEDTLS_ECP_DP_CURVE25519 )
+    {
+        if( blen < 33 )
+            return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
+        if( ( *buf++ != 32 ) )
+            return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+        memcpy( ctx->ctx.x25519.peer_point, buf, 32 );
+        return( 0 );
+    }
+    else
+    {
+        return mbedtls_ecdh_read_public( &ctx->ctx.ec, buf, blen );
+    }
 }
 
 int mbedtls_ecdhopt_shared_secret( mbedtls_ecdhopt_context *ctx, size_t *olen,
@@ -224,27 +227,27 @@ int mbedtls_ecdhopt_shared_secret( mbedtls_ecdhopt_context *ctx, size_t *olen,
                       int (*f_rng)(void *, unsigned char *, size_t),
                       void *p_rng )
 {
-  if( ctx->curve == MBEDTLS_ECP_DP_CURVE25519 )
-  {
-    *olen = 32;
+    if( ctx->curve == MBEDTLS_ECP_DP_CURVE25519 )
+    {
+        *olen = 32;
 
-    if( blen < *olen )
-        return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
+        if( blen < *olen )
+            return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret,
-      ctx->ctx.x25519.peer_point);
+        Hacl_Curve25519_crypto_scalarmult( buf, ctx->ctx.x25519.our_secret,
+            ctx->ctx.x25519.peer_point);
 
-    // Wipe the DH secret and don't let the peer chose a small subgroup point
-    memset( ctx->ctx.x25519.our_secret, 0, 32 );
-    if( memcmp( buf, ctx->ctx.x25519.our_secret, 32) == 0 )
-      return MBEDTLS_ERR_ECP_RANDOM_FAILED;
+        // Wipe the DH secret and don't let the peer chose a small subgroup point
+        memset( ctx->ctx.x25519.our_secret, 0, 32 );
+        if( memcmp( buf, ctx->ctx.x25519.our_secret, 32) == 0 )
+            return MBEDTLS_ERR_ECP_RANDOM_FAILED;
 
-    return ( 0 );
-  }
-  else
-  {
-    return mbedtls_ecdh_calc_secret( &ctx->ctx.ec, olen, buf, blen, f_rng, p_rng );
-  }
+        return( 0 );
+    }
+    else
+    {
+        return mbedtls_ecdh_calc_secret( &ctx->ctx.ec, olen, buf, blen, f_rng, p_rng );
+    }
 }
 
 #endif /* MBEDTLS_ECDH_C */
