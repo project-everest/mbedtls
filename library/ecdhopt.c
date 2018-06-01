@@ -19,7 +19,6 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -29,6 +28,7 @@
 #if defined(MBEDTLS_ECDH_C)
 
 #include "mbedtls/ecdhopt.h"
+
 #include "Hacl_Curve25519.h"
 
 #include <string.h>
@@ -145,28 +145,28 @@ int mbedtls_ecdhopt_read_initiator( mbedtls_ecdhopt_context *ctx,
 int mbedtls_ecdhopt_use_static_key( mbedtls_ecdhopt_context *octx,
                       const mbedtls_ecp_keypair *key, mbedtls_ecdhopt_side side )
 {
-  if( key->grp.id == MBEDTLS_ECP_DP_CURVE25519 )
-  {
-    mbedtls_ecdhopt_x25519_context ctx = octx->ctx.x25519;
-    octx->curve = MBEDTLS_ECP_DP_CURVE25519;
+    if( key->grp.id == MBEDTLS_ECP_DP_CURVE25519 )
+    {
+        size_t olen = 0;
+        mbedtls_ecdhopt_x25519_context ctx = octx->ctx.x25519;
+        octx->curve = MBEDTLS_ECP_DP_CURVE25519;
 
-    switch (side) {
-    case MBEDTLS_ECDH_THEIRS:
-      memcpy( ctx.peer_point, &key->Q, 32 );
-      return( 0 );
-    case MBEDTLS_ECDH_OURS:
-      memcpy( ctx.our_secret, &key->d, 32 ); // multiply by &key->Q or base?
-      return( 0 );
-    default:
-      return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+        switch( side ) {
+        case MBEDTLS_ECDH_THEIRS:
+            mbedtls_ecp_point_write_binary( &key->grp, &key->Q, MBEDTLS_ECP_PF_COMPRESSED, &olen, ctx.peer_point, 32 );
+            return( 0 );
+        case MBEDTLS_ECDH_OURS:
+            mbedtls_mpi_write_binary( &key->d, ctx.our_secret, 32 );
+            // key->Q = key->d * base; do we need to set up ctx.peer_point here?
+            return( 0 );
+        default:
+            return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+        }
     }
-
-    return ( 0 );
-  }
-  else
-  {
-    return mbedtls_ecdh_get_params( &octx->ctx.ec, key, side );
-  }
+    else
+    {
+        return mbedtls_ecdh_get_params( &octx->ctx.ec, key, side );
+    }
 }
 
 int mbedtls_ecdhopt_responder( mbedtls_ecdhopt_context *ctx, size_t *olen,
