@@ -157,11 +157,13 @@ int mbedtls_ecdhopt_use_static_key( mbedtls_ecdhopt_context *octx,
         switch( side ) {
         case MBEDTLS_ECDH_THEIRS:
             mbedtls_ecp_point_write_binary( &key->grp, &key->Q, MBEDTLS_ECP_PF_COMPRESSED, &olen, ctx.peer_point, 32 );
-            return( 0 );
+            // untested; defensively throw an error for now.
+            return(MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE);
         case MBEDTLS_ECDH_OURS:
             mbedtls_mpi_write_binary( &key->d, ctx.our_secret, 32 );
             // key->Q = key->d * base; do we need to set up ctx.peer_point here?
-            return( 0 );
+            // untested; defensively throw an error for now.
+            return( MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE );
         default:
             return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
         }
