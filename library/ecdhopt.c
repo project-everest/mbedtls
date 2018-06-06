@@ -71,18 +71,17 @@ void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
                        int (*f_rng)(void *, unsigned char *, size_t),
                        void *p_rng )
 {
+    int ret = 0;
     octx->curve = g;
+
     if( g == MBEDTLS_ECP_DP_CURVE25519 )
     {
           uint8_t base[32] = {0};
-          int ret;
-          mbedtls_ecdhopt_x25519_context ctx = octx->ctx.x25519;
 
-          if( ( ret = f_rng( p_rng, ctx.our_secret, 32 ) ) != 0 )
+          if( ( ret = f_rng( p_rng, octx->ctx.x25519.our_secret, 32 ) ) != 0 )
               return ret;
 
           *olen = 36;
-          if( blen < *olen )
           if( blen < *olen )
               return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
@@ -92,7 +91,7 @@ void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
           *buf++ = 32;
 
           base[0] = 9; // generator of x25519
-          Hacl_Curve25519_crypto_scalarmult( buf, ctx.our_secret, base );
+          Hacl_Curve25519_crypto_scalarmult( buf, octx->ctx.x25519.our_secret, base );
 
           base[0] = 0;
           if( memcmp( buf, base, 32) == 0 )
@@ -102,6 +101,9 @@ void mbedtls_ecdhopt_free( mbedtls_ecdhopt_context *ctx )
     }
     else
     {
+          if( ( ret = mbedtls_ecp_group_load( &octx->ctx.ec.grp, g ) ) != 0 )
+              return( ret );
+
           octx->ctx.ec.point_format = octx->point_format;
           return mbedtls_ecdh_make_params( &octx->ctx.ec, olen, buf, blen, f_rng, p_rng );
     }
