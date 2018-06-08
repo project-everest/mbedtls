@@ -978,47 +978,35 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
     if (todo.ecpopt) {
 #define BSZ 32
-        int ret = 0;
         uint8_t in1[BSZ], in2[BSZ], out[BSZ];
+        mbedtls_ecdh_context ctx;
+        mbedtls_ecp_point R, P;
+        mbedtls_mpi m;
+        size_t olen;
 
-        if ((ret = myrand(NULL, in1, 32)) != 0)
-            return ret;
+        mbedtls_ecdh_init(&ctx);
+        mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519);
 
-        if ((ret = myrand(NULL, in2, 32)) != 0)
-            return ret;
+        mbedtls_ecp_point_init(&R);
+        mbedtls_ecp_point_init(&P);
+        mbedtls_mpi_init(&m);
 
-        {
-            mbedtls_ecdh_context ctx;
-            mbedtls_ecp_point R, P;
-            mbedtls_mpi m;
-            size_t olen;
+        if (mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519) != 0 ||
+            mbedtls_ecdh_gen_public(&ctx.grp, &m, &R, myrand, NULL) != 0 ||
+            mbedtls_ecdh_gen_public(&ctx.grp, &m, &P, myrand, NULL) != 0)
+            mbedtls_exit(1);
 
-            mbedtls_ecdh_init(&ctx);
-            mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519);
-
-            mbedtls_ecp_point_init(&R);
-            mbedtls_ecp_point_init(&P);
-            mbedtls_mpi_init(&m);
-
-            if (mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519) != 0 ||
-                mbedtls_ecdh_gen_public(&ctx.grp, &m, &R, myrand, NULL) != 0 ||
-                mbedtls_ecdh_gen_public(&ctx.grp, &m, &P, myrand, NULL) != 0)
+        TIME_AND_TSC("ecp", {
+            if (mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL) != 0)
                 mbedtls_exit(1);
+            });
 
-            TIME_AND_TSC("ecp", {
-                if (mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL) != 0)
-                    mbedtls_exit(1);
-                });
+        mbedtls_ecp_point_write_binary(&ctx.grp, &R, MBEDTLS_ECP_PF_COMPRESSED, &olen, in2, BSZ);
+        mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in1, BSZ);
 
-            mbedtls_ecp_point_write_binary(&ctx.grp, &R, MBEDTLS_ECP_PF_COMPRESSED, &olen, in2, BSZ);
-            mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in1, BSZ);
-        }
-
-        {
-            TIME_AND_TSC("hacl", {
+        TIME_AND_TSC("hacl", {
                 Hacl_Curve25519_crypto_scalarmult(out, in1, in2);
-                });
-        }
+            });
 #undef BSZ
     }
 #endif
