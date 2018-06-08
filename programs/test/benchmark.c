@@ -70,6 +70,8 @@ int main( void )
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/ecdhopt.h"
 #include "mbedtls/error.h"
+#include "mbedtls/ecp.h"
+#include "Hacl_Curve25519.h"
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include "mbedtls/memory_buffer_alloc.h"
@@ -96,7 +98,7 @@ int main( void )
     "arc4, des3, des, camellia, blowfish,\n"                            \
     "aes_cbc, aes_gcm, aes_ccm, aes_cmac, des3_cmac,\n"                 \
     "havege, ctr_drbg, hmac_drbg\n"                                     \
-    "rsa, dhm, ecdsa, ecdh, ecdhopt.\n"
+    "rsa, dhm, ecdsa, ecdh, ecdhopt, ecpopt.\n"
 
 #if defined(MBEDTLS_ERROR_C)
 #define PRINT_ERROR                                                     \
@@ -231,7 +233,7 @@ typedef struct {
          aes_cbc, aes_gcm, aes_ccm, aes_cmac, des3_cmac,
          camellia, blowfish,
          havege, ctr_drbg, hmac_drbg,
-         rsa, dhm, ecdsa, ecdh, ecdhno, ecdhopt;
+         rsa, dhm, ecdsa, ecdh, ecdhno, ecdhopt, ecpopt;
 } todo_list;
 
 int main( int argc, char *argv[] )
@@ -304,6 +306,8 @@ int main( int argc, char *argv[] )
                 todo.ecdhno = 1;
             else if( strcmp( argv[i], "ecdhopt" ) == 0 )
                 todo.ecdhopt = 1;
+            else if (strcmp(argv[i], "ecpopt") == 0)
+                todo.ecpopt = 1;
             else
             {
                 mbedtls_printf( "Unrecognized option: %s\n", argv[i] );
@@ -968,6 +972,54 @@ int main( int argc, char *argv[] )
         ret = ret || mbedtls_ecdhopt_read_responder( &ecdhopt, sbuf, ckelen );
         ret = ret || mbedtls_ecdhopt_shared_secret( &ecdhopt, &dhlen, dh, sizeof(dh), myrand, NULL );
         mbedtls_ecdhopt_free( &ecdhopt ) );
+    }
+#endif
+
+#if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+    if (todo.ecpopt) {
+#define BSZ 32
+        int ret = 0;
+        uint8_t in1[BSZ], in2[BSZ], out[BSZ];
+
+        if ((ret = myrand(NULL, in1, 32)) != 0)
+            return ret;
+
+        if ((ret = myrand(NULL, in2, 32)) != 0)
+            return ret;
+
+        {
+            mbedtls_ecdh_context ctx;
+            mbedtls_ecp_point R, P;
+            mbedtls_mpi m;
+            size_t olen;
+
+            mbedtls_ecdh_init(&ctx);
+            mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519);
+
+            mbedtls_ecp_point_init(&R);
+            mbedtls_ecp_point_init(&P);
+            mbedtls_mpi_init(&m);
+
+            if (mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519) != 0 ||
+                mbedtls_ecdh_gen_public(&ctx.grp, &m, &R, myrand, NULL) != 0 ||
+                mbedtls_ecdh_gen_public(&ctx.grp, &m, &P, myrand, NULL) != 0)
+                mbedtls_exit(1);
+
+            TIME_AND_TSC("ecp", {
+                if (mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL) != 0)
+                    mbedtls_exit(1);
+                });
+
+            mbedtls_ecp_point_write_binary(&ctx.grp, &R, MBEDTLS_ECP_PF_COMPRESSED, &olen, in2, BSZ);
+            mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in1, BSZ);
+        }
+
+        {
+            TIME_AND_TSC("hacl", {
+                Hacl_Curve25519_crypto_scalarmult(out, in1, in2);
+                });
+        }
+#undef BSZ
     }
 #endif
 
