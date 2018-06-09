@@ -978,7 +978,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
     if (todo.ecpopt) {
 #define BSZ 32
-        uint8_t in1[BSZ], in2[BSZ], out[BSZ];
+        uint8_t in1[BSZ], in2[BSZ + 1], out[BSZ];
         mbedtls_ecdh_context ctx;
         mbedtls_ecp_point R, P;
         mbedtls_mpi m;
@@ -1001,11 +1001,15 @@ int main( int argc, char *argv[] )
                 mbedtls_exit(1);
             });
 
-        mbedtls_ecp_point_write_binary(&ctx.grp, &R, MBEDTLS_ECP_PF_COMPRESSED, &olen, in2, BSZ);
-        mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in1, BSZ);
+        if (mbedtls_mpi_write_binary(&m, in2, BSZ) != 0)
+            mbedtls_exit(1);
+
+        // mbedtls_ecp_point_write_binary wants an extra leading byte in the buffer.
+        if (mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in1, BSZ+1) != 0)
+            mbedtls_exit(1);
 
         TIME_AND_TSC("hacl", {
-                Hacl_Curve25519_crypto_scalarmult(out, in1, in2);
+                Hacl_Curve25519_crypto_scalarmult(out, in1, (in2 + 1));
             });
 #undef BSZ
     }
