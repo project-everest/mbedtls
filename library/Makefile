@@ -65,7 +65,8 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		ripemd160.o	rsa_internal.o	rsa.o  		\
 		sha1.o		sha256.o	sha512.o	\
 		threading.o	timing.o	version.o	\
-		version_features.o		Hacl_Curve25519.o FStar_UInt128.o \
+		version_features.o		Hacl_Curve25519.o \
+	       	sha256-x86_64.o	sha256_main_i.o	FStar_UInt128.o \
 		xtea.o
 
 OBJS_X509=	certs.o		pkcs11.o	x509.o		\

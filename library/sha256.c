@@ -24,6 +24,8 @@
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
+#define USE_VALE 1
+
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -33,6 +35,7 @@
 #if defined(MBEDTLS_SHA256_C)
 
 #include "mbedtls/sha256.h"
+#include "sha256_main_i.h"
 
 #include <string.h>
 
@@ -196,6 +199,11 @@ int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx,
     uint32_t A[8];
     unsigned int i;
 
+#if USE_VALE
+    if( ctx->is224 == 0 )
+    {
+#endif
+
     for( i = 0; i < 8; i++ )
         A[i] = ctx->state[i];
 
@@ -243,6 +251,17 @@ int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx,
 
     for( i = 0; i < 8; i++ )
         ctx->state[i] += A[i];
+
+#if USE_VALE
+    }
+    else // VALE sha256
+    {
+      sha256_main_i_SHA256_ComputeInitialWs((unsigned char*)data, (uint32_t)0, W, (uint32_t)0U, (uint32_t)1U, (uint32_t)2U, (uint32_t)3U);
+      sha256_main_i_SHA256_Compute64Steps(ctx->state, W, (uint32_t)0U, (uint32_t)1U, (uint32_t)2U, (uint32_t)3U, (uint32_t)4U,
+        (uint32_t)5U, (uint32_t)6U, (uint32_t)7U, (uint32_t)8U, (uint32_t)9U, (uint32_t)10U, (uint32_t)11U, (uint32_t)12U,
+        (uint32_t)13U, (uint32_t)14U, (uint32_t)15U, (uint32_t)16U);
+    }
+#endif
 
     return( 0 );
 }
