@@ -156,13 +156,14 @@ do {                                                                    \
 
 #define TIME_PUBLIC( TITLE, TYPE, CODE )                                \
 do {                                                                    \
-    unsigned long ii;                                                   \
+    unsigned long ii, tsc;                                              \
     int ret;                                                            \
     MEMORY_MEASURE_INIT;                                                \
                                                                         \
     mbedtls_printf( HEADER_FORMAT, TITLE );                             \
     fflush( stdout );                                                   \
     mbedtls_set_alarm( 3 );                                             \
+    tsc = mbedtls_timing_hardclock();                                   \
                                                                         \
     ret = 0;                                                            \
     for( ii = 1; ! mbedtls_timing_alarmed && ! ret ; ii++ )             \
@@ -176,7 +177,8 @@ do {                                                                    \
     }                                                                   \
     else                                                                \
     {                                                                   \
-        mbedtls_printf( "%6lu " TYPE "/s", ii / 3 );                    \
+        mbedtls_printf( "%6lu " TYPE "/s (%9lu cycles/" TYPE ")", ii/3, \
+			      mbedtls_timing_hardclock() - tsc );       \
         MEMORY_MEASURE_PRINT( sizeof( TYPE ) + 1 );                     \
         mbedtls_printf( "\n" );                                         \
     }                                                                   \
@@ -996,10 +998,10 @@ int main( int argc, char *argv[] )
             mbedtls_ecdh_gen_public(&ctx.grp, &m, &P, myrand, NULL) != 0)
             mbedtls_exit(1);
 
-        TIME_AND_TSC("ecp", {
-            if (mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL) != 0)
-                mbedtls_exit(1);
-            });
+        mbedtls_snprintf( title, sizeof( title ), "ECPopt" );
+        TIME_PUBLIC(title, "mul",
+            ret = mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL)
+        );
 
         if (mbedtls_mpi_write_binary(&m, in2, BSZ) != 0)
             mbedtls_exit(1);
@@ -1008,9 +1010,10 @@ int main( int argc, char *argv[] )
         if (mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in1, BSZ+1) != 0)
             mbedtls_exit(1);
 
-        TIME_AND_TSC("hacl", {
+        mbedtls_snprintf( title, sizeof( title ), "ECPopt-Hacl" );
+        TIME_PUBLIC(title, "mul",
                 Hacl_Curve25519_crypto_scalarmult(out, in1, (in2 + 1));
-            });
+        );
 #undef BSZ
     }
 #endif
