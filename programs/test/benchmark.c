@@ -178,7 +178,7 @@ do {                                                                    \
     else                                                                \
     {                                                                   \
         mbedtls_printf( "%6lu " TYPE "/s (%9lu cycles/" TYPE ")", ii/3, \
-			      mbedtls_timing_hardclock() - tsc );       \
+			      (mbedtls_timing_hardclock() - tsc) / ii );\
         MEMORY_MEASURE_PRINT( sizeof( TYPE ) + 1 );                     \
         mbedtls_printf( "\n" );                                         \
     }                                                                   \
