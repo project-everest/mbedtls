@@ -235,7 +235,7 @@ typedef struct {
          aes_cbc, aes_gcm, aes_ccm, aes_cmac, des3_cmac,
          camellia, blowfish,
          havege, ctr_drbg, hmac_drbg,
-         rsa, dhm, ecdsa, ecdh, ecdhno, ecdhopt, ecpopt;
+         rsa, dhm, ecdsa, ecdh, ecdhopt, ecpopt;
 } todo_list;
 
 int main( int argc, char *argv[] )
@@ -304,8 +304,6 @@ int main( int argc, char *argv[] )
                 todo.ecdsa = 1;
             else if( strcmp( argv[i], "ecdh" ) == 0 )
                 todo.ecdh = 1;
-            else if (strcmp(argv[i], "ecdhno") == 0)
-                todo.ecdhno = 1;
             else if( strcmp( argv[i], "ecdhopt" ) == 0 )
                 todo.ecdhopt = 1;
             else if (strcmp(argv[i], "ecpopt") == 0)
@@ -891,46 +889,6 @@ int main( int argc, char *argv[] )
             mbedtls_mpi_free( &z );
         }
     }
-
-    ///
-
-    if (todo.ecdhno)
-    {
-        mbedtls_ecdh_context ecdh;
-        mbedtls_mpi z;
-        const mbedtls_ecp_curve_info montgomery_curve_list[] = {
-#if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
-           { MBEDTLS_ECP_DP_CURVE25519, 0, 0, "Curve25519" },
-#endif
-        { MBEDTLS_ECP_DP_NONE, 0, 0, 0 }
-        };
-        const mbedtls_ecp_curve_info *curve_info;
-
-        for (curve_info = montgomery_curve_list;
-            curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
-            curve_info++)
-        {
-            mbedtls_ecdh_init(&ecdh);
-            mbedtls_mpi_init(&z);
-
-            if (mbedtls_ecp_group_load(&ecdh.grp, curve_info->grp_id) != 0 ||
-                mbedtls_ecdh_gen_public(&ecdh.grp, &ecdh.d, &ecdh.Qp,
-                    myrand, NULL) != 0 ||
-                mbedtls_ecdh_gen_public(&ecdh.grp, &ecdh.d, &ecdh.Q, myrand, NULL) != 0)
-            {
-                mbedtls_exit(1);
-            }
-
-            mbedtls_snprintf(title, sizeof(title), "ECDH-%s",
-                curve_info->name);
-            TIME_PUBLIC(title, "handshake",
-                ret |= mbedtls_ecdh_compute_shared(&ecdh.grp, &z, &ecdh.Qp, &ecdh.d,
-                    myrand, NULL));
-
-            mbedtls_ecdh_free(&ecdh);
-            mbedtls_mpi_free(&z);
-        }
-    }
 #endif
 
     mbedtls_printf( "\n" );
@@ -978,9 +936,9 @@ int main( int argc, char *argv[] )
 #endif
 
 #if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
-    if (todo.ecpopt) {
+    if( todo.ecpopt ) {
 #define BSZ 32
-        uint8_t in1[BSZ], in2[BSZ + 1], out[BSZ];
+        uint8_t in1[ BSZ ], in2[ BSZ + 1 ], out[ BSZ ];
         mbedtls_ecdh_context ctx;
         mbedtls_ecp_point R, P;
         mbedtls_mpi m;
@@ -1003,11 +961,11 @@ int main( int argc, char *argv[] )
             ret = mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL)
         );
 
-        if (mbedtls_mpi_write_binary(&m, in2, BSZ) != 0)
+        if( mbedtls_mpi_write_binary(&m, in1, BSZ) != 0 )
             mbedtls_exit(1);
 
         // mbedtls_ecp_point_write_binary wants an extra leading byte in the buffer.
-        if (mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in1, BSZ+1) != 0)
+        if( mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in2, BSZ+1) != 0 )
             mbedtls_exit(1);
 
         mbedtls_snprintf( title, sizeof( title ), "ECPopt-Hacl" );
