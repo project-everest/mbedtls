@@ -678,6 +678,15 @@ static inline mbedtls_kex_context *mbedtls_pk_key_exchange( const mbedtls_pk_con
  *
  * \return          0 if successful, or a specific error code
  */
+void mbedtls_pk_kex_set_type( mbedtls_pk_context *ctx, mbedtls_kex_type type );
+
+/**
+ * \brief
+ *
+ * \param pk        context
+ *
+ * \return          0 if successful, or a specific error code
+ */
 int mbedtls_pk_kex_initiate( const mbedtls_pk_context *ctx,
                 unsigned char *buf, size_t blen,
                 int (*f_rng)(void *, unsigned char *, size_t),

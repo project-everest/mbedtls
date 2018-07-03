@@ -549,6 +549,8 @@ static void pk_kex_free( void *ctx )
         mbedtls_free( dhm_ctx );
         break;
         }
+    case MBEDTLS_KEX_NONE: break;
+    default: break;
     }
     mbedtls_platform_zeroize( ctx, sizeof( mbedtls_kex_context ) );
     mbedtls_free( ctx );

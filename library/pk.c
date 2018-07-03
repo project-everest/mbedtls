@@ -42,6 +42,7 @@
 #endif
 
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
+#include "mbedtls/platform.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/ecdh.h"
 #endif
@@ -386,6 +387,31 @@ mbedtls_pk_type_t mbedtls_pk_get_type( const mbedtls_pk_context *ctx )
 }
 
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
+void mbedtls_pk_kex_set_type( mbedtls_pk_context *ctx, mbedtls_kex_type type )
+{
+    mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
+    switch( kex_ctx->type ) {
+        case MBEDTLS_KEX_ECDHE: mbedtls_ecdh_free( kex_ctx->ctx.ecdhe ); break;
+        case MBEDTLS_KEX_FFDHE: mbedtls_dhm_free( kex_ctx->ctx.ffdhe); break;
+        case MBEDTLS_KEX_NONE: break;
+        default: break;
+    }
+    switch( type )
+    {
+        case MBEDTLS_KEX_ECDHE:
+            kex_ctx->ctx.ecdhe = (mbedtls_ecdh_context *)mbedtls_calloc( 1, sizeof( mbedtls_ecdh_context ) );
+            mbedtls_ecdh_init( kex_ctx->ctx.ecdhe );
+            break;
+        case MBEDTLS_KEX_FFDHE:
+            kex_ctx->ctx.ffdhe = (mbedtls_dhm_context *)mbedtls_calloc( 1, sizeof( mbedtls_dhm_context ) );
+            mbedtls_dhm_init( kex_ctx->ctx.ffdhe );
+            break;
+        case MBEDTLS_KEX_NONE: break;
+        default: break;
+    }
+    kex_ctx->type = type;
+}
+
 int mbedtls_pk_kex_initiate( const mbedtls_pk_context *ctx,
                 unsigned char *buf, size_t blen,
                 int (*f_rng)(void *, unsigned char *, size_t),
@@ -401,7 +427,7 @@ int mbedtls_pk_kex_initiate( const mbedtls_pk_context *ctx,
     if( kex_ctx->type == MBEDTLS_KEX_NONE ) /* TODO: Set up ->type before getting here. */
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    switch (kex_ctx->type) {
+    switch( kex_ctx->type ) {
     case MBEDTLS_KEX_ECDHE: {
         mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
         ret |= mbedtls_ecp_group_load( &ecdh_ctx->grp, kex_ctx->gid.ecdhe );
@@ -480,7 +506,7 @@ int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
 {
     int ret = 0;
     mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
-    int olen;
+    size_t olen;
 
     if( ctx == NULL || ctx->pk_info == NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
@@ -489,7 +515,8 @@ int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
     {
     case MBEDTLS_KEX_ECDHE: {
         mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
-        ret |= mbedtls_ecdh_read_params( ecdh_ctx, &buf, buf + blen );
+        const unsigned char *cbuf = buf;
+        ret |= mbedtls_ecdh_read_params( ecdh_ctx, &cbuf, buf + blen );
         ret |= mbedtls_ecdh_make_public( ecdh_ctx, &olen, buf, blen, f_rng, p_rng );
         ret |= mbedtls_ecdh_calc_secret( ecdh_ctx, &olen, buf, blen, f_rng, p_rng );
         break;

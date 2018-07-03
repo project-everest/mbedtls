@@ -50,6 +50,7 @@
 #include "mbedtls/platform_time.h"
 #endif
 
+
 #if defined(MBEDTLS_SSL_DTLS_HELLO_VERIFY)
 int mbedtls_ssl_set_client_transport_id( mbedtls_ssl_context *ssl,
                                  const unsigned char *info,
@@ -347,8 +348,13 @@ static int ssl_parse_supported_point_formats( mbedtls_ssl_context *ssl,
         if( p[0] == MBEDTLS_ECP_PF_UNCOMPRESSED ||
             p[0] == MBEDTLS_ECP_PF_COMPRESSED )
         {
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+            mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx );
+            kex_ctx->ctx.ecdhe->point_format = p[ 0 ];
+#else
 #if defined(MBEDTLS_ECDH_C) || defined(MBEDTLS_ECDSA_C)
             ssl->handshake->ecdh_ctx.point_format = p[0];
+#endif
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
             ssl->handshake->ecjpake_ctx.point_format = p[0];
@@ -2808,6 +2814,7 @@ static int ssl_write_certificate_request( mbedtls_ssl_context *ssl )
 static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
 {
     int ret;
+    mbedtls_ecdh_context *ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
 
     if( ! mbedtls_pk_can_do( mbedtls_ssl_own_key( ssl ), MBEDTLS_PK_ECKEY ) )
     {
@@ -2815,7 +2822,7 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
         return( MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH );
     }
 
-    if( ( ret = mbedtls_ecdh_get_params( &ssl->handshake->ecdh_ctx,
+    if( ( ret = mbedtls_ecdh_get_params( ecdh_ctx,
                                  mbedtls_pk_ec( *mbedtls_ssl_own_key( ssl ) ),
                                  MBEDTLS_ECDH_OURS ) ) != 0 )
     {
@@ -2929,12 +2936,18 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
     {
         int ret;
         size_t len = 0;
+        mbedtls_dhm_context *dhm_ctx;
 
         if( ssl->conf->dhm_P.p == NULL || ssl->conf->dhm_G.p == NULL )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "no DH parameters set" ) );
             return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
         }
+
+        #if defined(MBEDTLS_PK_KEX_SUPPORT)
+        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_FFDHE );
+        #endif
+        dhm_ctx = mbedtls_ssl_get_dhm_ctx( ssl );
 
         /*
          * Ephemeral DH parameters:
@@ -2945,7 +2958,7 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
          *     opaque dh_Ys<1..2^16-1>;
          * } ServerDHParams;
          */
-        if( ( ret = mbedtls_dhm_set_group( &ssl->handshake->dhm_ctx,
+        if( ( ret = mbedtls_dhm_set_group( dhm_ctx,
                                            &ssl->conf->dhm_P,
                                            &ssl->conf->dhm_G ) ) != 0 )
         {
@@ -2954,8 +2967,8 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
         }
 
         if( ( ret = mbedtls_dhm_make_params(
-                  &ssl->handshake->dhm_ctx,
-                  (int) mbedtls_mpi_size( &ssl->handshake->dhm_ctx.P ),
+                  dhm_ctx,
+                  (int) mbedtls_mpi_size( &dhm_ctx->P ),
                   ssl->out_msg + ssl->out_msglen, &len,
                   ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
         {
@@ -2969,10 +2982,10 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
 
         ssl->out_msglen += len;
 
-        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: X ", &ssl->handshake->dhm_ctx.X  );
-        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &ssl->handshake->dhm_ctx.P  );
-        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: G ", &ssl->handshake->dhm_ctx.G  );
-        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: GX", &ssl->handshake->dhm_ctx.GX );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: X ", &dhm_ctx->X  );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &dhm_ctx->P );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: G ", &dhm_ctx->G );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: GX", &dhm_ctx->GX );
     }
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__DHE_ENABLED */
 
@@ -2994,6 +3007,7 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
         const mbedtls_ecp_group_id *gid;
         int ret;
         size_t len = 0;
+        mbedtls_ecdh_context *ecdh_ctx;
 
         /* Match our preference list against the offered curves */
         for( gid = ssl->conf->curve_list; *gid != MBEDTLS_ECP_DP_NONE; gid++ )
@@ -3010,7 +3024,12 @@ curve_matching_done:
 
         MBEDTLS_SSL_DEBUG_MSG( 2, ( "ECDHE curve: %s", (*curve)->name ) );
 
-        if( ( ret = mbedtls_ecp_group_load( &ssl->handshake->ecdh_ctx.grp,
+        #if defined(MBEDTLS_PK_KEX_SUPPORT)
+        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+        #endif
+        ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
+
+        if( ( ret = mbedtls_ecp_group_load( &ecdh_ctx->grp,
                                        (*curve)->grp_id ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecp_group_load", ret );
@@ -3018,7 +3037,7 @@ curve_matching_done:
         }
 
         if( ( ret = mbedtls_ecdh_make_params(
-                  &ssl->handshake->ecdh_ctx, &len,
+                  ecdh_ctx, &len,
                   ssl->out_msg + ssl->out_msglen,
                   MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen,
                   ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
@@ -3033,7 +3052,7 @@ curve_matching_done:
 
         ssl->out_msglen += len;
 
-        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q ", &ssl->handshake->ecdh_ctx.Q );
+        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q ", &ecdh_ctx->Q );
     }
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__ECDHE_ENABLED */
 
@@ -3352,6 +3371,7 @@ static int ssl_parse_client_dh_public( mbedtls_ssl_context *ssl, unsigned char *
 {
     int ret = MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
     size_t n;
+    mbedtls_dhm_context *dhm_ctx = mbedtls_ssl_get_dhm_ctx( ssl );
 
     /*
      * Receive G^Y mod P, premaster = (G^Y)^X mod P
@@ -3371,7 +3391,7 @@ static int ssl_parse_client_dh_public( mbedtls_ssl_context *ssl, unsigned char *
         return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE );
     }
 
-    if( ( ret = mbedtls_dhm_read_public( &ssl->handshake->dhm_ctx, *p, n ) ) != 0 )
+    if( ( ret = mbedtls_dhm_read_public( dhm_ctx, *p, n ) ) != 0 )
     {
         MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_dhm_read_public", ret );
         return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
@@ -3379,7 +3399,7 @@ static int ssl_parse_client_dh_public( mbedtls_ssl_context *ssl, unsigned char *
 
     *p += n;
 
-    MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: GY", &ssl->handshake->dhm_ctx.GY );
+    MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: GY", &dhm_ctx->GY );
 
     return( ret );
 }
@@ -3701,6 +3721,8 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA )
     {
+        mbedtls_dhm_context *dhm_ctx = mbedtls_ssl_get_dhm_ctx( ssl );
+
         if( ( ret = ssl_parse_client_dh_public( ssl, &p, end ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, ( "ssl_parse_client_dh_public" ), ret );
@@ -3713,7 +3735,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE );
         }
 
-        if( ( ret = mbedtls_dhm_calc_secret( &ssl->handshake->dhm_ctx,
+        if( ( ret = mbedtls_dhm_calc_secret( dhm_ctx,
                                       ssl->handshake->premaster,
                                       MBEDTLS_PREMASTER_SIZE,
                                      &ssl->handshake->pmslen,
@@ -3723,7 +3745,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_CS );
         }
 
-        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: K ", &ssl->handshake->dhm_ctx.K  );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: K ", &dhm_ctx->K  );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED */
@@ -3736,16 +3758,21 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_RSA ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA )
     {
-        if( ( ret = mbedtls_ecdh_read_public( &ssl->handshake->ecdh_ctx,
+        mbedtls_ecdh_context *ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
+        #if defined(MBEDTLS_PK_KEX_SUPPORT)
+        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+        #endif
+
+        if( ( ret = mbedtls_ecdh_read_public( ecdh_ctx,
                                       p, end - p) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_read_public", ret );
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
         }
 
-        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp ", &ssl->handshake->ecdh_ctx.Qp );
+        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp ", &ecdh_ctx->Qp );
 
-        if( ( ret = mbedtls_ecdh_calc_secret( &ssl->handshake->ecdh_ctx,
+        if( ( ret = mbedtls_ecdh_calc_secret( ecdh_ctx,
                                       &ssl->handshake->pmslen,
                                        ssl->handshake->premaster,
                                        MBEDTLS_MPI_MAX_SIZE,
@@ -3755,7 +3782,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_CS );
         }
 
-        MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z  ", &ssl->handshake->ecdh_ctx.z );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z  ", &ecdh_ctx->z );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -3855,20 +3882,27 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK )
     {
+        mbedtls_ecdh_context *ecdh_ctx;
+
         if( ( ret = ssl_parse_client_psk_identity( ssl, &p, end ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, ( "ssl_parse_client_psk_identity" ), ret );
             return( ret );
         }
 
-        if( ( ret = mbedtls_ecdh_read_public( &ssl->handshake->ecdh_ctx,
+        #if defined(MBEDTLS_PK_KEX_SUPPORT)
+        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+        #endif
+        ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
+
+        if( ( ret = mbedtls_ecdh_read_public( ecdh_ctx,
                                        p, end - p ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_read_public", ret );
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
         }
 
-        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp ", &ssl->handshake->ecdh_ctx.Qp );
+        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp ", &ecdh_ctx->Qp );
 
         if( ( ret = mbedtls_ssl_psk_derive_premaster( ssl,
                         ciphersuite_info->key_exchange ) ) != 0 )

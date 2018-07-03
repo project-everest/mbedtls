@@ -213,11 +213,15 @@ struct mbedtls_ssl_handshake_params
     defined(MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED)
     mbedtls_ssl_sig_hash_set_t hash_algs;             /*!<  Set of suitable sig-hash pairs */
 #endif
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    mbedtls_pk_context pk_ctx;
+#else
 #if defined(MBEDTLS_DHM_C)
     mbedtls_dhm_context dhm_ctx;                /*!<  DHM key exchange        */
 #endif
 #if defined(MBEDTLS_ECDH_C)
     mbedtls_ecdh_context ecdh_ctx;              /*!<  ECDH key exchange       */
+#endif
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
     mbedtls_ecjpake_context ecjpake_ctx;        /*!< EC J-PAKE key exchange */
@@ -671,6 +675,24 @@ int mbedtls_ssl_get_key_exchange_md_tls1_2( mbedtls_ssl_context *ssl,
                                             mbedtls_md_type_t md_alg );
 #endif /* MBEDTLS_SSL_PROTO_TLS1 || MBEDTLS_SSL_PROTO_TLS1_1 || \
           MBEDTLS_SSL_PROTO_TLS1_2 */
+
+static inline mbedtls_dhm_context *mbedtls_ssl_get_dhm_ctx( const mbedtls_ssl_context *ssl )
+{
+#if defined( MBEDTLS_PK_KEX_SUPPORT )
+    return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.ffdhe;
+#else
+    return &ssl->handshake->dhm_ctx;
+#endif
+}
+
+static inline mbedtls_ecdh_context *mbedtls_ssl_get_ecdh_ctx( const mbedtls_ssl_context *ssl )
+{
+#if defined( MBEDTLS_PK_KEX_SUPPORT )
+    return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.ecdhe;
+#else
+    return &ssl->handshake->ecdh_ctx;
+#endif
+}
 
 #ifdef __cplusplus
 }

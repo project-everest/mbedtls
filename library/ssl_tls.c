@@ -54,6 +54,11 @@
 #include "mbedtls/oid.h"
 #endif
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+#include "mbedtls/pk.h"
+#endif
+
+
 /* Length of the "epoch" field in the record header */
 static inline size_t ssl_ep_len( const mbedtls_ssl_context *ssl )
 {
@@ -1162,9 +1167,10 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
     {
         int ret;
         size_t len;
+        mbedtls_dhm_context *dhm_ctx = mbedtls_ssl_get_dhm_ctx( ssl );
 
         /* Write length only when we know the actual value */
-        if( ( ret = mbedtls_dhm_calc_secret( &ssl->handshake->dhm_ctx,
+        if( ( ret = mbedtls_dhm_calc_secret( dhm_ctx,
                                       p + 2, end - ( p + 2 ), &len,
                                       ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
         {
@@ -1175,7 +1181,7 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
         *(p++) = (unsigned char)( len );
         p += len;
 
-        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: K ", &ssl->handshake->dhm_ctx.K  );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: K ", &dhm_ctx->K  );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED */
@@ -1184,8 +1190,9 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
     {
         int ret;
         size_t zlen;
+        mbedtls_ecdh_context *ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
 
-        if( ( ret = mbedtls_ecdh_calc_secret( &ssl->handshake->ecdh_ctx, &zlen,
+        if( ( ret = mbedtls_ecdh_calc_secret( ecdh_ctx, &zlen,
                                        p + 2, end - ( p + 2 ),
                                        ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
         {
@@ -1197,7 +1204,7 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
         *(p++) = (unsigned char)( zlen      );
         p += zlen;
 
-        MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z", &ssl->handshake->ecdh_ctx.z );
+        MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z", &ecdh_ctx->z );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */
@@ -5514,11 +5521,15 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
     mbedtls_ssl_sig_hash_set_init( &handshake->hash_algs );
 #endif
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    mbedtls_pk_setup( &handshake->pk_ctx, mbedtls_pk_info_from_type( MBEDTLS_PK_KEX ) );
+#else
 #if defined(MBEDTLS_DHM_C)
     mbedtls_dhm_init( &handshake->dhm_ctx );
 #endif
 #if defined(MBEDTLS_ECDH_C)
     mbedtls_ecdh_init( &handshake->ecdh_ctx );
+#endif
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
     mbedtls_ecjpake_init( &handshake->ecjpake_ctx );
@@ -7472,11 +7483,15 @@ void mbedtls_ssl_handshake_free( mbedtls_ssl_context *ssl )
 #endif
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    mbedtls_pk_free( &handshake->pk_ctx );
+#else
 #if defined(MBEDTLS_DHM_C)
     mbedtls_dhm_free( &handshake->dhm_ctx );
 #endif
 #if defined(MBEDTLS_ECDH_C)
     mbedtls_ecdh_free( &handshake->ecdh_ctx );
+#endif
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
     mbedtls_ecjpake_free( &handshake->ecjpake_ctx );
