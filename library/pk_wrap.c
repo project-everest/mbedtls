@@ -520,4 +520,54 @@ const mbedtls_pk_info_t mbedtls_rsa_alt_info = {
 
 #endif /* MBEDTLS_PK_RSA_ALT_SUPPORT */
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+static void *pk_kex_alloc( void )
+{
+    mbedtls_kex_context *ctx = (mbedtls_kex_context*)mbedtls_calloc( 1, sizeof( mbedtls_kex_context ) );
+
+    if( ctx != NULL )
+        memset( ctx, 0, sizeof( mbedtls_kex_context ) );
+
+    ctx->type = MBEDTLS_KEX_NONE;
+
+    return ( ctx );
+}
+
+static void pk_kex_free( void *ctx )
+{
+    mbedtls_kex_context *kex_ctx = (mbedtls_kex_context *)ctx;
+    switch (kex_ctx->type) {
+    case MBEDTLS_KEX_ECDHE: {
+        mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
+        mbedtls_platform_zeroize( ecdh_ctx, sizeof( mbedtls_ecdh_context ) );
+        mbedtls_free( ecdh_ctx );
+        break;
+        }
+    case MBEDTLS_KEX_FFDHE: {
+        mbedtls_dhm_context *dhm_ctx = kex_ctx->ctx.ffdhe;
+        mbedtls_platform_zeroize( dhm_ctx, sizeof( mbedtls_dhm_context ) );
+        mbedtls_free( dhm_ctx );
+        break;
+        }
+    }
+    mbedtls_platform_zeroize( ctx, sizeof( mbedtls_kex_context ) );
+    mbedtls_free( ctx );
+}
+
+const mbedtls_pk_info_t mbedtls_kex_info = {
+    MBEDTLS_PK_KEX,
+    "KEX",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    pk_kex_alloc,
+    pk_kex_free,
+    NULL,
+};
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
+
 #endif /* MBEDTLS_PK_C */

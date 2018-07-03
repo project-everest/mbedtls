@@ -112,4 +112,8 @@ extern const mbedtls_pk_info_t mbedtls_ecdsa_info;
 extern const mbedtls_pk_info_t mbedtls_rsa_alt_info;
 #endif
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+extern const mbedtls_pk_info_t mbedtls_kex_info;
+#endif
+
 #endif /* MBEDTLS_PK_WRAP_H */

@@ -45,6 +45,11 @@
 #include "ecdsa.h"
 #endif
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+#include "ecdh.h"
+#include "dhm.h"
+#endif
+
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
     !defined(inline) && !defined(__cplusplus)
 #define inline __inline
@@ -81,6 +86,9 @@ typedef enum {
     MBEDTLS_PK_ECDSA,
     MBEDTLS_PK_RSA_ALT,
     MBEDTLS_PK_RSASSA_PSS,
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    MBEDTLS_PK_KEX,
+#endif
 } mbedtls_pk_type_t;
 
 /**
@@ -609,6 +617,95 @@ int mbedtls_pk_write_pubkey( unsigned char **p, unsigned char *start,
  */
 #if defined(MBEDTLS_FS_IO)
 int mbedtls_pk_load_file( const char *path, unsigned char **buf, size_t *n );
+#endif
+
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+/*
+ * Key Exchange
+ */
+
+typedef enum
+{
+    FFDHE2048,
+    FFDHE3072,
+    FFDHE4096,
+    FFDHE6144,
+    FFDHE8192
+    /* TODO: add more; move to dhm.h? */
+} mbedtls_dhm_group_id;
+
+typedef enum { MBEDTLS_KEX_NONE, MBEDTLS_KEX_FFDHE, MBEDTLS_KEX_ECDHE } mbedtls_kex_type;
+
+typedef struct
+{
+    mbedtls_kex_type type;
+    /* TODO: Introduce proper abstraction of key-exchange contexts and group
+       ids instead of these unions? */
+    union {
+        mbedtls_ecdh_context *ecdhe;
+        mbedtls_dhm_context *ffdhe;
+        /* TODO: Add more for e.g. Everest */
+    } ctx;
+    union {
+        mbedtls_ecp_group_id ecdhe;
+        mbedtls_dhm_group_id ffdhe;
+    } gid;
+}
+mbedtls_kex_context;
+
+typedef struct
+{
+    size_t size;
+    void *content;
+}
+mbedtls_key_share;
+
+/**
+ * Quick access to a key exchange context inside a PK context.
+ *
+ * \warning You must make sure the PK context actually holds a key exchange
+ * context before using this function!
+ */
+static inline mbedtls_kex_context *mbedtls_pk_key_exchange( const mbedtls_pk_context *pk )
+{
+    return ( (mbedtls_kex_context *)( pk )->pk_ctx );
+}
+
+/**
+ * \brief
+ *
+ * \param pk        context
+ *
+ * \return          0 if successful, or a specific error code
+ */
+int mbedtls_pk_kex_initiate( const mbedtls_pk_context *ctx,
+                unsigned char *buf, size_t blen,
+                int (*f_rng)(void *, unsigned char *, size_t),
+                void *p_rng);
+
+/**
+ * \brief
+ *
+ * \param pk        context
+ *
+ * \return          0 if successful, or a specific error code
+ */
+int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
+                unsigned char *buf, size_t blen,
+                int (*f_rng)(void *, unsigned char *, size_t),
+                void *p_rng );
+
+/**
+ * \brief
+ *
+ * \param pk        context
+ *
+ * \return          0 if successful, or a specific error code
+ */
+int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
+                unsigned char *buf, size_t blen,
+                int (*f_rng)(void *, unsigned char *, size_t),
+                void *p_rng );
 #endif
 
 #ifdef __cplusplus

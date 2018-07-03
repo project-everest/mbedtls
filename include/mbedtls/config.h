@@ -1104,6 +1104,15 @@
 #define MBEDTLS_PK_RSA_ALT_SUPPORT
 
 /**
+ * \def MBEDTLS_PK_KEX_SUPPORT
+ *
+ * Support key exchange in the PK layer.
+ *
+ * Comment this macro to disable support for key exchange in the PK layer.
+ */
+#define MBEDTLS_PK_KEX_SUPPORT
+
+/**
  * \def MBEDTLS_PKCS1_V15
  *
  * Enable support for PKCS#1 v1.5 encoding.

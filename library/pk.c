@@ -41,6 +41,11 @@
 #include "mbedtls/ecdsa.h"
 #endif
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+#include "mbedtls/dhm.h"
+#include "mbedtls/ecdh.h"
+#endif
+
 #include <limits.h>
 #include <stdint.h>
 
@@ -88,6 +93,10 @@ const mbedtls_pk_info_t * mbedtls_pk_info_from_type( mbedtls_pk_type_t pk_type )
 #if defined(MBEDTLS_ECDSA_C)
         case MBEDTLS_PK_ECDSA:
             return( &mbedtls_ecdsa_info );
+#endif
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+        case MBEDTLS_PK_KEX:
+            return( &mbedtls_kex_info );
 #endif
         /* MBEDTLS_PK_RSA_ALT omitted on purpose */
         default:
@@ -375,5 +384,131 @@ mbedtls_pk_type_t mbedtls_pk_get_type( const mbedtls_pk_context *ctx )
 
     return( ctx->pk_info->type );
 }
+
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+int mbedtls_pk_kex_initiate( const mbedtls_pk_context *ctx,
+                unsigned char *buf, size_t blen,
+                int (*f_rng)(void *, unsigned char *, size_t),
+                void *p_rng)
+{
+    int ret = 0;
+    mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
+    size_t olen;
+
+    if( ctx == NULL || ctx->pk_info == NULL )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+    if( kex_ctx->type == MBEDTLS_KEX_NONE ) /* TODO: Set up ->type before getting here. */
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+    switch (kex_ctx->type) {
+    case MBEDTLS_KEX_ECDHE: {
+        mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
+        ret |= mbedtls_ecp_group_load( &ecdh_ctx->grp, kex_ctx->gid.ecdhe );
+        ret |= mbedtls_ecdh_make_params( ecdh_ctx, &olen, buf, blen, f_rng, p_rng );
+        break;
+    }
+    case MBEDTLS_KEX_FFDHE: {
+        mbedtls_dhm_context *dh_ctx = kex_ctx->ctx.ffdhe;
+
+        switch( kex_ctx->gid.ffdhe ) {
+        case FFDHE2048: {
+            const unsigned char p[] = MBEDTLS_DHM_RFC7919_FFDHE2048_P_BIN;
+            const unsigned char g[] = MBEDTLS_DHM_RFC7919_FFDHE2048_G_BIN;
+            ret |= mbedtls_mpi_read_binary( &dh_ctx->P, p, sizeof(p) );
+            ret |= mbedtls_mpi_read_binary( &dh_ctx->G, g, sizeof(g) );
+            mbedtls_dhm_set_group(dh_ctx, &dh_ctx->P, &dh_ctx->G);
+            break;
+            }
+        default:
+            /* TODO: Others */
+            return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+        }
+
+        ret |= mbedtls_dhm_make_params( dh_ctx, (int)mbedtls_mpi_size( &dh_ctx->P ), buf, &olen, f_rng, p_rng );
+        break;
+        }
+    default:
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+    }
+
+    return( ret );
+}
+
+int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
+                unsigned char *buf, size_t blen,
+                int (*f_rng)(void *, unsigned char *, size_t),
+                void *p_rng )
+{
+    int ret = 0;
+    mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
+    size_t olen;
+
+    if( ctx == NULL || ctx->pk_info == NULL )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+    switch( kex_ctx->type )
+    {
+    case MBEDTLS_KEX_ECDHE:
+    {
+        mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
+        ret |= mbedtls_ecdh_read_public( ecdh_ctx, buf, blen );
+        ret |= mbedtls_ecdh_calc_secret( ecdh_ctx, &olen, buf, blen, f_rng, p_rng );
+        /* TODO: *_calc_secret saves a TLS-specific serialization of the shared
+            secret in the context. Replace with proper, TLS-indepdentent datatype
+            for key shares? */
+        break;
+    }
+    case MBEDTLS_KEX_FFDHE:
+    {
+        mbedtls_dhm_context *dh_ctx = kex_ctx->ctx.ffdhe;
+        ret |= mbedtls_dhm_read_public( dh_ctx, buf, blen);
+        ret |= mbedtls_dhm_calc_secret( dh_ctx, buf, blen, &olen, f_rng, p_rng );
+        break;
+    }
+    default:
+        ret = MBEDTLS_ERR_PK_BAD_INPUT_DATA;
+    }
+
+    return( ret );
+}
+
+int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
+                unsigned char *buf, size_t blen,
+                int (*f_rng)(void *, unsigned char *, size_t),
+                void *p_rng )
+{
+    int ret = 0;
+    mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
+    int olen;
+
+    if( ctx == NULL || ctx->pk_info == NULL )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+    switch( kex_ctx->type )
+    {
+    case MBEDTLS_KEX_ECDHE: {
+        mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
+        ret |= mbedtls_ecdh_read_params( ecdh_ctx, &buf, buf + blen );
+        ret |= mbedtls_ecdh_make_public( ecdh_ctx, &olen, buf, blen, f_rng, p_rng );
+        ret |= mbedtls_ecdh_calc_secret( ecdh_ctx, &olen, buf, blen, f_rng, p_rng );
+        break;
+        }
+    case MBEDTLS_KEX_FFDHE: {
+        mbedtls_dhm_context *dh_ctx = kex_ctx->ctx.ffdhe;
+        size_t psz = (int)mbedtls_mpi_size( &dh_ctx->P );
+        ret |= mbedtls_dhm_read_params( dh_ctx, &buf, buf + blen );
+        ret |= mbedtls_dhm_make_public( dh_ctx, psz, buf, blen, f_rng, p_rng );
+        ret |= mbedtls_dhm_calc_secret( dh_ctx, buf, blen, &olen, f_rng, p_rng );
+        break;
+        }
+    default:
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+    }
+
+    return( ret );
+}
+
+#endif
 
 #endif /* MBEDTLS_PK_C */
