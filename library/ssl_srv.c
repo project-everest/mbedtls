@@ -349,8 +349,10 @@ static int ssl_parse_supported_point_formats( mbedtls_ssl_context *ssl,
             p[0] == MBEDTLS_ECP_PF_COMPRESSED )
         {
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
-            mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx );
-            kex_ctx->ctx.ecdhe->point_format = p[ 0 ];
+            mbedtls_ecdh_context *ecdh_ctx;
+            mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+            ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
+            ecdh_ctx->point_format = p[ 0 ];
 #else
 #if defined(MBEDTLS_ECDH_C) || defined(MBEDTLS_ECDSA_C)
             ssl->handshake->ecdh_ctx.point_format = p[0];
@@ -3759,9 +3761,6 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA )
     {
         mbedtls_ecdh_context *ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
-        #if defined(MBEDTLS_PK_KEX_SUPPORT)
-        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
-        #endif
 
         if( ( ret = mbedtls_ecdh_read_public( ecdh_ctx,
                                       p, end - p) ) != 0 )
@@ -3890,9 +3889,6 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             return( ret );
         }
 
-        #if defined(MBEDTLS_PK_KEX_SUPPORT)
-        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
-        #endif
         ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
 
         if( ( ret = mbedtls_ecdh_read_public( ecdh_ctx,

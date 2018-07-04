@@ -1264,7 +1264,11 @@ static int ssl_parse_supported_point_formats_ext( mbedtls_ssl_context *ssl,
             p[0] == MBEDTLS_ECP_PF_COMPRESSED )
         {
 #if defined(MBEDTLS_ECDH_C) || defined(MBEDTLS_ECDSA_C)
-            mbedtls_ecdh_context *ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
+            mbedtls_ecdh_context *ecdh_ctx;
+            #if defined(MBEDTLS_PK_KEX_SUPPORT)
+            mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+            #endif
+            ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
             ecdh_ctx->point_format = p[0];
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
@@ -2410,7 +2414,7 @@ static int ssl_parse_server_key_exchange( mbedtls_ssl_context *ssl )
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK )
     {
         #if defined(MBEDTLS_PK_KEX_SUPPORT)
-        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_FFDHE );
         #endif
         if( ssl_parse_server_dh_params( ssl, &p, end ) != 0 )
         {
@@ -2430,9 +2434,6 @@ static int ssl_parse_server_key_exchange( mbedtls_ssl_context *ssl )
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA )
     {
-        #if defined(MBEDTLS_PK_KEX_SUPPORT)
-        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_FFDHE);
-        #endif
         if( ssl_parse_server_ecdh_params( ssl, &p, end ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad server key exchange message" ) );
