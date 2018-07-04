@@ -150,7 +150,7 @@ int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
 }
 
 /*
- * Read the ServerKeyExhange parameters (RFC 4492)
+ * Read the ServerKeyExchange parameters (RFC 4492)
  *      struct {
  *          ECParameters    curve_params;
  *          ECPoint         public;

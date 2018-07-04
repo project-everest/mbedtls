@@ -163,7 +163,7 @@ int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
                       void *p_rng );
 
 /**
- * \brief           This function parses and processes a TLS ServerKeyExhange
+ * \brief           This function parses and processes a TLS ServerKeyExchange
  *                  payload.
  *
  *                  This is the first function used by a TLS client for ECDHE
