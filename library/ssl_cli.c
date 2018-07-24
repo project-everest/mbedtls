@@ -2847,6 +2847,39 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
 
     MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> write client key exchange" ) );
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA )
+    {
+        size_t out_msg_len;
+        if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA )
+        {
+            mbedtls_dhm_context *dh_ctx = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.ffdhe;
+            n = dh_ctx->len;
+
+            ssl->out_msg[4] = ( unsigned char )(n >> 8);
+            ssl->out_msg[5] = ( unsigned char )(n);
+            i = 6;
+            out_msg_len = n;
+        }
+        else
+        {
+            out_msg_len = 1000;
+            i = 4;
+        }
+
+        if( (ret = mbedtls_pk_kex_respond( &ssl->handshake->pk_ctx,
+                                       &ssl->out_msg[i], out_msg_len, &n,
+                                        ssl->handshake->premaster, MBEDTLS_PREMASTER_SIZE,
+                                       &ssl->handshake->pmslen,
+                                        ssl->conf->f_rng, ssl->conf->p_rng )) != 0 )
+            return ret;
+    }
+    else
+#else
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA )
     {
@@ -2933,6 +2966,8 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
           MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED */
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
+
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
     if( mbedtls_ssl_ciphersuite_uses_psk( ciphersuite_info ) )
     {

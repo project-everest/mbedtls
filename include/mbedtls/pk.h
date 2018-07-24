@@ -624,16 +624,6 @@ int mbedtls_pk_load_file( const char *path, unsigned char **buf, size_t *n );
  * Key Exchange
  */
 
-typedef enum
-{
-    FFDHE2048,
-    FFDHE3072,
-    FFDHE4096,
-    FFDHE6144,
-    FFDHE8192
-    /* TODO: add more; move to dhm.h? */
-} mbedtls_dhm_group_id;
-
 typedef enum { MBEDTLS_KEX_NONE, MBEDTLS_KEX_FFDHE, MBEDTLS_KEX_ECDHE } mbedtls_kex_type;
 
 typedef struct
@@ -659,6 +649,7 @@ typedef struct
     void *content;
 }
 mbedtls_key_share;
+
 
 /**
  * Quick access to a key exchange context inside a PK context.
@@ -687,8 +678,9 @@ void mbedtls_pk_kex_set_type( mbedtls_pk_context *ctx, mbedtls_kex_type type );
  *
  * \return          0 if successful, or a specific error code
  */
-int mbedtls_pk_kex_initiate( const mbedtls_pk_context *ctx,
-                unsigned char *buf, size_t blen,
+// typedef struct mbedtls_ssl_ciphersuite_t mbedtls_ssl_ciphersuite_t;
+int mbedtls_pk_kex_initiate( mbedtls_pk_context *ctx, mbedtls_kex_type type,
+                unsigned char *buf, size_t blen, size_t *olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
                 void *p_rng);
 
@@ -700,7 +692,9 @@ int mbedtls_pk_kex_initiate( const mbedtls_pk_context *ctx,
  * \return          0 if successful, or a specific error code
  */
 int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
-                unsigned char *buf, size_t blen,
+                unsigned char *inbuf, size_t inbuflen,
+                unsigned char *outbuf, size_t outbuflen,
+                size_t *olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
                 void *p_rng );
 
@@ -712,7 +706,8 @@ int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
  * \return          0 if successful, or a specific error code
  */
 int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
-                unsigned char *buf, size_t blen,
+                unsigned char *public_buf, size_t public_buflen, size_t *public_olen,
+                unsigned char *secret_buf, size_t secret_buflen, size_t *secret_olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
                 void *p_rng );
 #endif

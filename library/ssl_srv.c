@@ -2930,6 +2930,59 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
 #endif /* MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */
 
+/*
+ * Key exchange
+ */
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    {
+        int ret;
+        size_t len = 0;
+
+        mbedtls_pk_context *ctx = &ssl->handshake->pk_ctx;
+        mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
+        mbedtls_kex_type kex_type = MBEDTLS_KEX_NONE;
+
+        if( mbedtls_ssl_ciphersuite_uses_ecdhe( ciphersuite_info ) )
+        {
+            const mbedtls_ecp_curve_info **curve = NULL;
+            const mbedtls_ecp_group_id *gid;
+
+            /* Match our preference list against the offered curves */
+            for( gid = ssl->conf->curve_list; *gid != MBEDTLS_ECP_DP_NONE; gid++ )
+                for( curve = ssl->handshake->curves; *curve != NULL; curve++ )
+                    if( (*curve)->grp_id == *gid )
+                        goto curve_matching_done;
+
+            curve_matching_done:
+            if( curve == NULL || *curve == NULL )
+            {
+                MBEDTLS_SSL_DEBUG_MSG( 1, ("no matching curve for ECDHE") );
+                return(MBEDTLS_ERR_SSL_NO_CIPHER_CHOSEN);
+            }
+
+            kex_ctx->gid.ecdhe = (*curve)->grp_id;
+            kex_type = MBEDTLS_KEX_ECDHE;
+        }
+        else if( mbedtls_ssl_ciphersuite_uses_dhe( ciphersuite_info ) ) {
+            kex_type = MBEDTLS_KEX_FFDHE;
+        }
+
+        if( (ret = mbedtls_pk_kex_initiate( ctx, kex_type,
+            ssl->out_msg + ssl->out_msglen,
+            MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen, &len,
+            ssl->conf->f_rng, ssl->conf->p_rng )) )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ("mbedtls_pk_kex_initiate") );
+            return ret;
+        }
+
+#if defined(MBEDTLS_KEY_EXCHANGE__WITH_SERVER_SIGNATURE__ENABLED)
+        dig_signed = ssl->out_msg + ssl->out_msglen;
+#endif
+
+        ssl->out_msglen += len;
+    }
+#else
     /*
      * - DHE key exchanges
      */
@@ -3057,6 +3110,7 @@ curve_matching_done:
         MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q ", &ecdh_ctx->Q );
     }
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__ECDHE_ENABLED */
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
 
     /*
      *
@@ -3720,6 +3774,33 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
         return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE );
     }
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA )
+    {
+        size_t q_len = end - p;
+        unsigned char *q = p;
+
+        if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA ) {
+            q_len = ((p)[0] << 8) | (p)[1];
+            q = p + 2;
+        }
+
+        if( (ret = mbedtls_pk_kex_read_public( &ssl->handshake->pk_ctx,
+                                        q, q_len,
+                                        ssl->handshake->premaster, MBEDTLS_PREMASTER_SIZE,
+                                        &ssl->handshake->pmslen,
+                                        ssl->conf->f_rng, ssl->conf->p_rng )) )
+        {
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_read_public", ret );
+            return(ret);
+        }
+    }
+    else
+#else
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA )
     {
@@ -3751,6 +3832,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED */
+
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) ||                     \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED) ||                   \
     defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED) ||                      \
@@ -3784,6 +3866,8 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
         MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z  ", &ecdh_ctx->z );
     }
     else
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
+
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED ||

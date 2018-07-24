@@ -124,6 +124,50 @@ void mbedtls_dhm_init( mbedtls_dhm_context *ctx )
     memset( ctx, 0, sizeof( mbedtls_dhm_context ) );
 }
 
+#define SELECT_GROUP( GRP, X ) \
+        case ( X ): \
+        { \
+            const unsigned char p[] = X ## _P_BIN; \
+            const unsigned char g[] = X ## _G_BIN; \
+            if( ( ret = mbedtls_mpi_read_binary( &GRP->P, p, sizeof( p ) ) ) != 0 ) \
+                return ret; \
+            if( (ret = mbedtls_mpi_read_binary( &GRP->G, g, sizeof( g ) ) ) != 0 ) \
+                return ret; \
+            break; \
+        }
+
+int mbedtls_dhm_group_load( mbedtls_dhm_group *grp, mbedtls_dhm_group_id id ) {
+    int ret;
+
+    if( grp == NULL )
+        return ( MBEDTLS_ERR_DHM_BAD_INPUT_DATA );
+
+    mbedtls_mpi_init( &grp->P );
+    mbedtls_mpi_init( &grp->G );
+
+    switch(id) {
+    case MBEDTLS_DHM_RFC5114_MODP_2048: {
+        if(( ret = mbedtls_mpi_read_string( &grp->P, 16, MBEDTLS_DHM_RFC5114_MODP_2048_P ) ) != 0 )
+            return ret;
+        if(( ret = mbedtls_mpi_read_string( &grp->G, 16, MBEDTLS_DHM_RFC5114_MODP_2048_G ) ) != 0 )
+            return ret;
+        break;
+    }
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC3526_MODP_2048 )
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC3526_MODP_3072 )
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC3526_MODP_4096 )
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE2048 )
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE3072 )
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE4096 )
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE6144 )
+    SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE8192 )
+    default:
+        ret = MBEDTLS_ERR_DHM_SET_GROUP_FAILED;
+    }
+
+    return ret;
+}
+
 /*
  * Parse the ServerKeyExchange parameters
  */
