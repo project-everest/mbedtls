@@ -55,13 +55,6 @@
     mbedtls_debug_print_mpi( ssl, level, __FILE__, __LINE__, text, X )
 #endif
 
-#if defined(MBEDTLS_ECP_C)
-#define MBEDTLS_SSL_DEBUG_ECP( level, text, X, L )               \
-    mbedtls_debug_print_ecp( ssl, level, __FILE__, __LINE__, text, X, L )
-#define MBEDTLS_SSL_DEBUG_ECPC( level, text, X, L )              \
-    mbedtls_debug_print_ecp_compressed( ssl, level, __FILE__, __LINE__, text, X, L )
-#endif
-
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 #define MBEDTLS_SSL_DEBUG_CRT( level, text, crt )                \
     mbedtls_debug_print_crt( ssl, level, __FILE__, __LINE__, text, crt )

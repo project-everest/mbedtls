@@ -79,7 +79,6 @@ int main( void )
 
 #include "mbedtls/error.h"
 #include "mbedtls/ecp.h"
-#include "Hacl_Curve25519.h"
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include "mbedtls/memory_buffer_alloc.h"
@@ -998,85 +997,6 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
     mbedtls_memory_buffer_alloc_free();
-#endif
-
-#if defined(MBEDTLS_ECDH_C)
-    if( todo.ecdhopt )
-    {
-      mbedtls_ecdhopt_context ecdhopt;
-      mbedtls_ecdhopt_curve g = MBEDTLS_ECP_DP_CURVE25519;
-      unsigned char ske[40];
-      unsigned char cke[34];
-      unsigned char dh[32];
-      size_t skelen, ckelen, dhlen;
-
-      // Generate a fresh SKE message for the client test
-      mbedtls_ecdhopt_init( &ecdhopt );
-      if( mbedtls_ecdhopt_initiator( &ecdhopt, g, &skelen, ske, sizeof(ske), myrand, NULL ) != 0 )
-      {
-        mbedtls_exit( 1 );
-      }
-      mbedtls_ecdhopt_free( &ecdhopt );
-
-      mbedtls_snprintf( title, sizeof( title ), "ECDHopt-X25519-client" );
-      TIME_PUBLIC( title, "handshake",
-        const unsigned char *cbuf = ske;
-        mbedtls_ecdhopt_init( &ecdhopt );
-        ret = ret || mbedtls_ecdhopt_read_initiator( &ecdhopt, &cbuf, ske + skelen );
-        ret = ret || mbedtls_ecdhopt_responder( &ecdhopt, &ckelen, cke, sizeof(cke), myrand, NULL );
-        ret = ret || mbedtls_ecdhopt_shared_secret( &ecdhopt, &dhlen, dh, sizeof(dh), myrand, NULL );
-        mbedtls_ecdhopt_free( &ecdhopt ) );
-
-      mbedtls_snprintf( title, sizeof(title), "ECDHopt-X25519-server" );
-      TIME_PUBLIC(title, "handshake",
-        unsigned char *sbuf = cke;
-        mbedtls_ecdhopt_init( &ecdhopt );
-        ret = ret || mbedtls_ecdhopt_initiator( &ecdhopt, g, &skelen, ske, sizeof(ske), myrand, NULL );
-        ret = ret || mbedtls_ecdhopt_read_responder( &ecdhopt, sbuf, ckelen );
-        ret = ret || mbedtls_ecdhopt_shared_secret( &ecdhopt, &dhlen, dh, sizeof(dh), myrand, NULL );
-        mbedtls_ecdhopt_free( &ecdhopt ) );
-    }
-#endif
-
-#if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
-    if( todo.ecpopt ) {
-#define BSZ 32
-        uint8_t in1[ BSZ ], in2[ BSZ + 1 ], out[ BSZ ];
-        mbedtls_ecdh_context ctx;
-        mbedtls_ecp_point R, P;
-        mbedtls_mpi m;
-        size_t olen;
-
-        mbedtls_ecdh_init(&ctx);
-        mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519);
-
-        mbedtls_ecp_point_init(&R);
-        mbedtls_ecp_point_init(&P);
-        mbedtls_mpi_init(&m);
-
-        if (mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519) != 0 ||
-            mbedtls_ecdh_gen_public(&ctx.grp, &m, &R, myrand, NULL) != 0 ||
-            mbedtls_ecdh_gen_public(&ctx.grp, &m, &P, myrand, NULL) != 0)
-            mbedtls_exit(1);
-
-        mbedtls_snprintf( title, sizeof( title ), "ECPopt" );
-        TIME_PUBLIC(title, "mul",
-            ret = mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL)
-        );
-
-        if( mbedtls_mpi_write_binary(&m, in1, BSZ) != 0 )
-            mbedtls_exit(1);
-
-        // mbedtls_ecp_point_write_binary wants an extra leading byte in the buffer.
-        if( mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in2, BSZ+1) != 0 )
-            mbedtls_exit(1);
-
-        mbedtls_snprintf( title, sizeof( title ), "ECPopt-Hacl" );
-        TIME_PUBLIC(title, "mul",
-                Hacl_Curve25519_crypto_scalarmult(out, in1, (in2 + 1));
-        );
-#undef BSZ
-    }
 #endif
 
 #if defined(_WIN32)

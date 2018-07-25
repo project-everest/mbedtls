@@ -2024,8 +2024,6 @@ static int ssl_check_server_ecdh_params( const mbedtls_ssl_context *ssl )
 #endif
         return( -1 );
 
-    MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp", &ecdh_ctx->Qp );
-
     return( 0 );
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -3056,8 +3054,6 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                 MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_responder", ret );
                 return( ret );
             }
-
-            MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q", &ecdh_ctx->Q );
         }
         else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */
