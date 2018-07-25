@@ -2960,17 +2960,23 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
                 return(MBEDTLS_ERR_SSL_NO_CIPHER_CHOSEN);
             }
 
+            MBEDTLS_SSL_DEBUG_MSG( 2, ("ECDHE curve: %s", (*curve)->name) );
+
             kex_ctx->gid.ecdhe = (*curve)->grp_id;
             kex_type = MBEDTLS_KEX_ECDHE;
         }
         else if( mbedtls_ssl_ciphersuite_uses_dhe( ciphersuite_info ) ) {
             kex_type = MBEDTLS_KEX_FFDHE;
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: X ", &kex_ctx->ctx.ffdhe->X );
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &kex_ctx->ctx.ffdhe->P );
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: G ", &kex_ctx->ctx.ffdhe->G );
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: GX", &kex_ctx->ctx.ffdhe->GX );
         }
 
         if( (ret = mbedtls_pk_kex_initiate( ctx, kex_type,
-            ssl->out_msg + ssl->out_msglen,
-            MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen, &len,
-            ssl->conf->f_rng, ssl->conf->p_rng )) )
+                                    ssl->out_msg + ssl->out_msglen,
+                                    MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen, &len,
+                                    ssl->conf->f_rng, ssl->conf->p_rng )) )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ("mbedtls_pk_kex_initiate") );
             return ret;
