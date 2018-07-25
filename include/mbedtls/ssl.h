@@ -44,10 +44,6 @@
 #include "dhm.h"
 #endif
 
-#if defined(MBEDTLS_ECDH_C)
-#include "ecdhopt.h"
-#endif
-
 #if defined(MBEDTLS_ZLIB_SUPPORT)
 
 #if defined(MBEDTLS_DEPRECATED_WARNING)

@@ -48,6 +48,7 @@
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
 #include "ecdh.h"
 #include "dhm.h"
+#include "everest/x25519.h"
 #endif
 
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
@@ -624,7 +625,7 @@ int mbedtls_pk_load_file( const char *path, unsigned char **buf, size_t *n );
  * Key Exchange
  */
 
-typedef enum { MBEDTLS_KEX_NONE, MBEDTLS_KEX_FFDHE, MBEDTLS_KEX_ECDHE } mbedtls_kex_type;
+typedef enum { MBEDTLS_KEX_NONE, MBEDTLS_KEX_FFDHE, MBEDTLS_KEX_ECDHE, MBEDTLS_KEX_X25519 } mbedtls_kex_type;
 
 typedef struct
 {
@@ -634,7 +635,7 @@ typedef struct
     union {
         mbedtls_ecdh_context *ecdhe;
         mbedtls_dhm_context *ffdhe;
-        /* TODO: Add more for e.g. Everest */
+        mbedtls_x25519_context *x25519;
     } ctx;
     union {
         mbedtls_ecp_group_id ecdhe;

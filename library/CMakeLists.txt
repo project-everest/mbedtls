@@ -63,8 +63,9 @@ set(src_crypto
     version.c
     version_features.c
     xtea.c
-    Hacl_Curve25519.c
-    ecdhopt.c
+    everest/Hacl_Curve25519.c
+    everest/x25519.c
+    everest/FStar_UInt128.c
 )
 
 set(src_x509

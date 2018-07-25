@@ -106,7 +106,7 @@ int main( void )
     "aes_cbc, aes_gcm, aes_ccm, aes_ctx, chachapoly,\n"                 \
     "aes_cmac, des3_cmac, poly1305\n"                                   \
     "havege, ctr_drbg, hmac_drbg\n"                                     \
-    "rsa, dhm, ecdsa, ecdh, ecdhopt, ecpopt.\n"
+    "rsa, dhm, ecdsa, ecdh.\n"
 
 #if defined(MBEDTLS_ERROR_C)
 #define PRINT_ERROR                                                     \
@@ -254,7 +254,7 @@ typedef struct {
          aria, camellia, blowfish, chacha20,
          poly1305,
          havege, ctr_drbg, hmac_drbg,
-         rsa, dhm, ecdsa, ecdh, ecdhopt, ecpopt;
+         rsa, dhm, ecdsa, ecdh;
 } todo_list;
 
 int main( int argc, char *argv[] )
@@ -333,10 +333,6 @@ int main( int argc, char *argv[] )
                 todo.ecdsa = 1;
             else if( strcmp( argv[i], "ecdh" ) == 0 )
                 todo.ecdh = 1;
-            else if( strcmp( argv[i], "ecdhopt" ) == 0 )
-                todo.ecdhopt = 1;
-            else if (strcmp(argv[i], "ecpopt") == 0)
-                todo.ecpopt = 1;
             else
             {
                 mbedtls_printf( "Unrecognized option: %s\n", argv[i] );

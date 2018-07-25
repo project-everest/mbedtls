@@ -85,8 +85,8 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010;../../library/everest/kremlin</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -100,8 +100,8 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010;../../library/everest/kremlin</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -117,8 +117,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010;../../library/everest/kremlin</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -135,8 +135,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/vs2010;../../library/everest/kremlin</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,8 +146,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\kremlib.h" />
-    <ClInclude Include="..\..\include\Hacl_Curve25519.h" />
+    <ClInclude Include="..\..\include\everest\Hacl_Curve25519.h" />
+    <ClInclude Include="..\..\include\everest\kremlib.h" />
+    <ClInclude Include="..\..\include\everest\x25519.h" />
     <ClInclude Include="..\..\include\mbedtls\aes.h" />
     <ClInclude Include="..\..\include\mbedtls\aesni.h" />
     <ClInclude Include="..\..\include\mbedtls\arc4.h" />
@@ -174,7 +175,6 @@
     <ClInclude Include="..\..\include\mbedtls\des.h" />
     <ClInclude Include="..\..\include\mbedtls\dhm.h" />
     <ClInclude Include="..\..\include\mbedtls\ecdh.h" />
-    <ClInclude Include="..\..\include\mbedtls\ecdhopt.h" />
     <ClInclude Include="..\..\include\mbedtls\ecdsa.h" />
     <ClInclude Include="..\..\include\mbedtls\ecjpake.h" />
     <ClInclude Include="..\..\include\mbedtls\ecp.h" />
@@ -228,7 +228,6 @@
     <ClInclude Include="..\..\include\mbedtls\xtea.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\library\Hacl_Curve25519.c" />
     <ClCompile Include="..\..\library\aes.c" />
     <ClCompile Include="..\..\library\aesni.c" />
     <ClCompile Include="..\..\library\arc4.c" />
@@ -251,7 +250,6 @@
     <ClCompile Include="..\..\library\des.c" />
     <ClCompile Include="..\..\library\dhm.c" />
     <ClCompile Include="..\..\library\ecdh.c" />
-    <ClCompile Include="..\..\library\ecdhopt.c" />
     <ClCompile Include="..\..\library\ecdsa.c" />
     <ClCompile Include="..\..\library\ecjpake.c" />
     <ClCompile Include="..\..\library\ecp.c" />
@@ -259,6 +257,10 @@
     <ClCompile Include="..\..\library\entropy.c" />
     <ClCompile Include="..\..\library\entropy_poll.c" />
     <ClCompile Include="..\..\library\error.c" />
+    <ClCompile Include="..\..\library\everest\Hacl_Curve25519.c" />
+    <ClCompile Include="..\..\library\everest\kremlin\c\fstar_uint64.c" />
+    <ClCompile Include="..\..\library\everest\kremlin\FStar_UInt128.c" />
+    <ClCompile Include="..\..\library\everest\x25519.c" />
     <ClCompile Include="..\..\library\gcm.c" />
     <ClCompile Include="..\..\library\havege.c" />
     <ClCompile Include="..\..\library\hkdf.c" />

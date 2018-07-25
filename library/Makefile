@@ -5,7 +5,7 @@ CFLAGS	?= -O2
 WARNING_CFLAGS ?=  -Wall -W -Wdeclaration-after-statement
 LDFLAGS ?=
 
-LOCAL_CFLAGS = $(WARNING_CFLAGS) -I../include -I../include/everest -D_FILE_OFFSET_BITS=64
+LOCAL_CFLAGS = $(WARNING_CFLAGS) -I../include -I../include/everest -I../library/everest/kremlin -D_FILE_OFFSET_BITS=64
 LOCAL_LDFLAGS =
 
 ifdef DEBUG
@@ -70,7 +70,7 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		chachapoly.o	cipher.o	cipher_wrap.o	\
 		cmac.o		ctr_drbg.o	des.o		\
 		dhm.o		ecdh.o		ecdsa.o		\
-		ecjpake.o	ecp.o		ecdhopt.o	\
+		ecjpake.o	ecp.o	\
 		ecp_curves.o	entropy.o	entropy_poll.o	\
 		error.o		gcm.o		havege.o	\
 		hkdf.o						\
@@ -84,7 +84,9 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		ripemd160.o	rsa_internal.o	rsa.o  		\
 		sha1.o		sha256.o	sha512.o	\
 		threading.o	timing.o	version.o	\
-		version_features.o		xtea.o	Hacl_Curve25519.o
+		version_features.o		xtea.o	\
+		everest/x25519.o everest/Hacl_Curve25519.o \
+		everest/kremlin/c/fstar_uint128.o everest/kremlin/c/fstar_uint64.o
 
 OBJS_X509=	certs.o		pkcs11.o	x509.o		\
 		x509_create.o	x509_crl.o	x509_crt.o	\
@@ -193,11 +195,11 @@ libmbedcrypto.dll: $(OBJS_CRYPTO)
 
 .c.o:
 	echo "  CC    $<"
-	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -c $<
+	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $(<:.c=.o) -c $<
 
 clean:
 ifndef WINDOWS
-	rm -f *.o libmbed*
+	rm -f *.o libmbed* everest/*.o
 else
 	del /Q /F *.o libmbed*
 endif
