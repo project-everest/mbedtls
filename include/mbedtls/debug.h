@@ -56,8 +56,10 @@
 #endif
 
 #if defined(MBEDTLS_ECP_C)
-#define MBEDTLS_SSL_DEBUG_ECP( level, text, X )                  \
-    mbedtls_debug_print_ecp( ssl, level, __FILE__, __LINE__, text, X )
+#define MBEDTLS_SSL_DEBUG_ECP( level, text, X, L )               \
+    mbedtls_debug_print_ecp( ssl, level, __FILE__, __LINE__, text, X, L )
+#define MBEDTLS_SSL_DEBUG_ECPC( level, text, X, L )              \
+    mbedtls_debug_print_ecp_compressed( ssl, level, __FILE__, __LINE__, text, X, L )
 #endif
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -176,6 +178,24 @@ void mbedtls_debug_print_buf( const mbedtls_ssl_context *ssl, int level,
 void mbedtls_debug_print_mpi( const mbedtls_ssl_context *ssl, int level,
                       const char *file, int line,
                       const char *text, const mbedtls_mpi *X );
+
+/**
+* \brief   Print a compressed EC point variable to the debug output.
+*
+* \param ssl       SSL context
+* \param level     error level of the debug message
+* \param file      file the error has occurred in
+* \param line      line number the error has occurred in
+* \param text      a name or label for the MPI being output. Normally the
+*                  variable name
+* \param X         the compressed EC point
+*
+* \attention       This function is intended for INTERNAL usage within the
+*                  library only.
+*/
+void mbedtls_debug_print_compressed_ecp( const mbedtls_ssl_context *ssl, int level,
+                      const char *file, int line,
+                      const char *text, const unsigned char *X, unsigned int length );
 #endif
 
 #if defined(MBEDTLS_ECP_C)
@@ -198,6 +218,26 @@ void mbedtls_debug_print_mpi( const mbedtls_ssl_context *ssl, int level,
 void mbedtls_debug_print_ecp( const mbedtls_ssl_context *ssl, int level,
                       const char *file, int line,
                       const char *text, const mbedtls_ecp_point *X );
+
+/**
+* \brief   Print a compressed ECP point to the debug output. This function is always
+*          used through the MBEDTLS_SSL_DEBUG_ECPC() macro, which supplies the
+*          ssl context, file and line number parameters.
+*
+* \param ssl       SSL context
+* \param level     error level of the debug message
+* \param file      file the error has occurred in
+* \param line      line number the error has occurred in
+* \param text      a name or label for the ECP point being output. Normally the
+*                  variable name
+* \param X         the ECP point
+*
+* \attention       This function is intended for INTERNAL usage within the
+*                  library only.
+*/
+void mbedtls_debug_print_ecp_compressed( const mbedtls_ssl_context *ssl, int level,
+                      const char *file, int line,
+                      const char *text, const unsigned char *X, unsigned int length );
 #endif
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)

@@ -63,6 +63,8 @@ set(src_crypto
     version.c
     version_features.c
     xtea.c
+    Hacl_Curve25519.c
+    ecdhopt.c
 )
 
 set(src_x509

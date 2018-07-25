@@ -2020,8 +2020,7 @@ static int ssl_check_server_ecdh_params( const mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_ECP_C)
     if( mbedtls_ssl_check_curve( ssl, ecdh_ctx->grp.id ) != 0 )
 #else
-    if( ssl->handshake->ecdh_ctx.grp.nbits < 163 ||
-        ssl->handshake->ecdh_ctx.grp.nbits > 521 )
+    if( curve_info->bit_size < 163 || curve_info->bit_size > 521 )
 #endif
         return( -1 );
 
@@ -2057,7 +2056,7 @@ static int ssl_parse_server_ecdh_params( mbedtls_ssl_context *ssl,
     if( ( ret = mbedtls_ecdh_read_params( ecdh_ctx,
                                   (const unsigned char **) p, end ) ) != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdh_read_params" ), ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdhopt_read_initiator" ), ret );
         return( ret );
     }
 
@@ -2066,7 +2065,6 @@ static int ssl_parse_server_ecdh_params( mbedtls_ssl_context *ssl,
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad server key exchange message (ECDHE curve)" ) );
         return( MBEDTLS_ERR_SSL_BAD_HS_SERVER_KEY_EXCHANGE );
     }
-
     return( ret );
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -2283,7 +2281,7 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
     if( ( ret = mbedtls_ecdh_get_params( ecdh_ctx, peer_key,
                                  MBEDTLS_ECDH_THEIRS ) ) != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdh_get_params" ), ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdhopt_use_static_key" ), ret );
         return( ret );
     }
 
@@ -2943,7 +2941,7 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                                 ssl->conf->f_rng, ssl->conf->p_rng );
         if( ret != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_make_public", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_responder", ret );
             return( ret );
         }
 
@@ -2955,11 +2953,11 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                                        MBEDTLS_MPI_MAX_SIZE,
                                        ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_calc_secret", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_shared_secret", ret );
             return( ret );
         }
 
-        MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z", &ecdh_ctx->z );
+        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Secret: ", ssl->handshake->ecdh_ctx.ctx.x25519.our_secret, 32 );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -3055,7 +3053,7 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                     ssl->conf->f_rng, ssl->conf->p_rng );
             if( ret != 0 )
             {
-                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_make_public", ret );
+                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_responder", ret );
                 return( ret );
             }
 

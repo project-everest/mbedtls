@@ -220,7 +220,7 @@ struct mbedtls_ssl_handshake_params
     mbedtls_dhm_context dhm_ctx;                /*!<  DHM key exchange        */
 #endif
 #if defined(MBEDTLS_ECDH_C)
-    mbedtls_ecdh_context ecdh_ctx;              /*!<  ECDH key exchange       */
+    mbedtls_ecdhopt_context ecdh_ctx;              /*!<  ECDH key exchange       */
 #endif
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)

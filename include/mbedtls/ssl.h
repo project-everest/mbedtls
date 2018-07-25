@@ -45,7 +45,7 @@
 #endif
 
 #if defined(MBEDTLS_ECDH_C)
-#include "ecdh.h"
+#include "ecdhopt.h"
 #endif
 
 #if defined(MBEDTLS_ZLIB_SUPPORT)

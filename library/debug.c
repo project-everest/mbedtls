@@ -208,6 +208,19 @@ void mbedtls_debug_print_ecp( const mbedtls_ssl_context *ssl, int level,
     mbedtls_snprintf( str, sizeof( str ), "%s(Y)", text );
     mbedtls_debug_print_mpi( ssl, level, file, line, str, &X->Y );
 }
+
+void mbedtls_debug_print_ecp_compressed( const mbedtls_ssl_context *ssl, int level,
+                      const char *file, int line,
+                      const char *text, const unsigned char *X, unsigned int length )
+{
+  char str[DEBUG_BUF_SIZE];
+
+  if( ssl->conf == NULL || ssl->conf->f_dbg == NULL || level > debug_threshold )
+    return;
+
+  mbedtls_snprintf( str, sizeof(str), "%s", text );
+  mbedtls_debug_print_compressed_ecp( ssl, level, file, line, str, X, length );
+}
 #endif /* MBEDTLS_ECP_C */
 
 #if defined(MBEDTLS_BIGNUM_C)
@@ -271,6 +284,40 @@ void mbedtls_debug_print_mpi( const mbedtls_ssl_context *ssl, int level,
 
     mbedtls_snprintf( str + idx, sizeof( str ) - idx, "\n" );
     debug_send_line( ssl, level, file, line, str );
+}
+
+void mbedtls_debug_print_compressed_ecp( const mbedtls_ssl_context *ssl, int level,
+                      const char *file, int line,
+                      const char *text, const unsigned char *X, unsigned int length )
+{
+  char str[DEBUG_BUF_SIZE];
+  unsigned int j;
+  size_t idx = 0;
+
+  if( ssl->conf == NULL || ssl->conf->f_dbg == NULL || X == NULL || level > debug_threshold || length == 0 )
+    return;
+
+  mbedtls_snprintf( str + idx, sizeof(str) - idx, "value of '%s' (%d bits) is:\n", text, length * 8 );
+  debug_send_line( ssl, level, file, line, str );
+
+  for( j = 0; j < length; j++ )
+  {
+    if( j % 16 == 0 )
+    {
+      if( j > 0 )
+      {
+        mbedtls_snprintf( str + idx, sizeof(str) - idx, "\n" );
+        debug_send_line( ssl, level, file, line, str );
+        idx = 0;
+      }
+    }
+
+    idx += mbedtls_snprintf( str + idx, sizeof(str) - idx, " %02x", X[j] );
+    idx += mbedtls_snprintf( str + idx, sizeof(str) - idx, " 00" );
+  }
+
+  mbedtls_snprintf( str + idx, sizeof(str) - idx, "\n" );
+  debug_send_line( ssl, level, file, line, str );
 }
 #endif /* MBEDTLS_BIGNUM_C */
 
