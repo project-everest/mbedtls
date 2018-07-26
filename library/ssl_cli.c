@@ -2054,7 +2054,7 @@ static int ssl_parse_server_ecdh_params( mbedtls_ssl_context *ssl,
     if( ( ret = mbedtls_ecdh_read_params( ecdh_ctx,
                                   (const unsigned char **) p, end ) ) != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdhopt_read_initiator" ), ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdh_read_params" ), ret );
         return( ret );
     }
 
@@ -2279,7 +2279,7 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
     if( ( ret = mbedtls_ecdh_get_params( ecdh_ctx, peer_key,
                                  MBEDTLS_ECDH_THEIRS ) ) != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdhopt_use_static_key" ), ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdh_get_params" ), ret );
         return( ret );
     }
 
@@ -2939,7 +2939,7 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                                 ssl->conf->f_rng, ssl->conf->p_rng );
         if( ret != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_responder", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_responder", ret );
             return( ret );
         }
 
@@ -2951,11 +2951,9 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                                        MBEDTLS_MPI_MAX_SIZE,
                                        ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_shared_secret", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_calc_secret", ret );
             return( ret );
         }
-
-        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Secret: ", ssl->handshake->ecdh_ctx.ctx.x25519.our_secret, 32 );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -3051,7 +3049,7 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                     ssl->conf->f_rng, ssl->conf->p_rng );
             if( ret != 0 )
             {
-                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_responder", ret );
+                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_make_public", ret );
                 return( ret );
             }
         }

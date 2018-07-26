@@ -725,7 +725,7 @@ run_test    "Default" \
             -s "Protocol is TLSv1.2" \
             -s "Ciphersuite is TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384" \
             -s "client hello v3, signature_algorithm ext: 6" \
-            -s "ECDHE curve: secp521r1" \
+            -s "ECDHE curve: x25519" \
             -S "error" \
             -C "error"
 
@@ -745,7 +745,7 @@ run_test    "Default, ServerHello contains gmt_unix_time" \
             -s "Protocol is TLSv1.2" \
             -s "Ciphersuite is TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384" \
             -s "client hello v3, signature_algorithm ext: 6" \
-            -s "ECDHE curve: secp521r1" \
+            -s "ECDHE curve: x25519" \
             -S "error" \
             -C "error" \
             -f "check_server_hello_time" \

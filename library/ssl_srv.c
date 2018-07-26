@@ -2831,7 +2831,7 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
                                  mbedtls_pk_ec( *mbedtls_ssl_own_key( ssl ) ),
                                  MBEDTLS_ECDH_OURS ) ) != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdhopt_use_static_key" ), ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdh_get_params" ), ret );
         return( ret );
     }
 
@@ -2966,7 +2966,7 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
             MBEDTLS_SSL_DEBUG_MSG( 2, ("ECDHE curve: %s", (*curve)->name) );
 
             kex_ctx->gid.ecdhe = (*curve)->grp_id;
-            kex_type = MBEDTLS_KEX_ECDHE;
+            kex_type = (*curve)->grp_id == MBEDTLS_ECP_DP_CURVE25519 ? MBEDTLS_KEX_X25519 : MBEDTLS_KEX_ECDHE;
         }
         else if( mbedtls_ssl_ciphersuite_uses_dhe( ciphersuite_info ) ) {
             kex_type = MBEDTLS_KEX_FFDHE;
@@ -3106,7 +3106,7 @@ curve_matching_done:
                   MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen,
                   ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_initiator", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_make_params", ret );
             return( ret );
         }
 
@@ -3858,7 +3858,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
         // effect on p? It looks like mbed ignores leftover bytes silently, check with ARM
                                       p, end - p) ) != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_read_responder", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_read_public", ret );
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
         }
 
@@ -3870,7 +3870,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
                                        MBEDTLS_MPI_MAX_SIZE,
                                        ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_shared_secret", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_calc_secret", ret );
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_CS );
         }
 
@@ -3990,7 +3990,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
         // FIXME(adl) same problem as above, can p have leftover bytes?
                                        p, end - p ) ) != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdhopt_read_responder", ret );
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_read_public", ret );
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
         }
 

@@ -43,6 +43,10 @@
 #include "sha512.h"
 #endif
 
+#if defined(MBEDTLS_ECDH_C)
+#include "ecdh.h"
+#endif
+
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
 #include "ecjpake.h"
 #endif
@@ -220,7 +224,7 @@ struct mbedtls_ssl_handshake_params
     mbedtls_dhm_context dhm_ctx;                /*!<  DHM key exchange        */
 #endif
 #if defined(MBEDTLS_ECDH_C)
-    mbedtls_ecdhopt_context ecdh_ctx;              /*!<  ECDH key exchange       */
+    mbedtls_ecdh_context ecdh_ctx;              /*!<  ECDH key exchange       */
 #endif
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
@@ -679,6 +683,8 @@ int mbedtls_ssl_get_key_exchange_md_tls1_2( mbedtls_ssl_context *ssl,
 static inline mbedtls_dhm_context *mbedtls_ssl_get_dhm_ctx( const mbedtls_ssl_context *ssl )
 {
 #if defined( MBEDTLS_PK_KEX_SUPPORT )
+    if( mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->type != MBEDTLS_KEX_FFDHE )
+        return 0;
     return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.ffdhe;
 #else
     return &ssl->handshake->dhm_ctx;
@@ -688,11 +694,22 @@ static inline mbedtls_dhm_context *mbedtls_ssl_get_dhm_ctx( const mbedtls_ssl_co
 static inline mbedtls_ecdh_context *mbedtls_ssl_get_ecdh_ctx( const mbedtls_ssl_context *ssl )
 {
 #if defined( MBEDTLS_PK_KEX_SUPPORT )
+    if( mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->type != MBEDTLS_KEX_ECDHE )
+        return 0;
     return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.ecdhe;
 #else
     return &ssl->handshake->ecdh_ctx;
 #endif
 }
+
+#if defined( MBEDTLS_PK_KEX_SUPPORT )
+static inline mbedtls_x25519_context *mbedtls_ssl_get_x25519_ctx( const mbedtls_ssl_context *ssl )
+{
+    if( mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->type != MBEDTLS_KEX_X25519 )
+        return 0;
+    return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.x25519;
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -7,8 +7,8 @@
  */
 
 
-#ifndef MBEDTLS_ECDHOPT_H
-#define MBEDTLS_ECDHOPT_H
+#ifndef MBEDTLS_X25519_H
+#define MBEDTLS_X25519_H
 
 #include <mbedtls/ecdh.h>
 
@@ -194,4 +194,4 @@ int mbedtls_x25519_use_static_key( mbedtls_x25519_context *ctx,
 }
 #endif
 
-#endif /* ecdhopt.h */
+#endif /* x25519.h */
