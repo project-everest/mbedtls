@@ -641,6 +641,10 @@ typedef struct
         mbedtls_ecp_group_id ecdhe;
         mbedtls_dhm_group_id ffdhe;
     } gid;
+    int point_format;
+
+    unsigned char *read_params_buf;
+    unsigned char *read_params_end;
 }
 mbedtls_kex_context;
 
@@ -711,6 +715,16 @@ int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
                 unsigned char *secret_buf, size_t secret_buflen, size_t *secret_olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
                 void *p_rng );
+
+/**
+ * \brief
+ *
+ * \param pk        context
+ *
+ * \return          0 if successful, or a specific error code
+ */
+int mbedtls_pk_kex_get_params( const mbedtls_pk_context *ctx,
+                const mbedtls_ecp_keypair *key, mbedtls_ecdh_side side);
 #endif
 
 #ifdef __cplusplus

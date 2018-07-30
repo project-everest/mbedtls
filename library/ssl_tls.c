@@ -1162,6 +1162,28 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED */
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    if( key_ex == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
+        key_ex == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK )
+    {
+        int ret;
+        size_t len;
+
+        if( ( ret = mbedtls_pk_kex_respond( &ssl->handshake->pk_ctx,
+                                            0, 0, 0,
+                                            p + 2, end - ( p + 2 ), &len,
+                                            ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
+        {
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_respond", ret );
+            return( ret );
+        }
+
+        *(p++) = ( unsigned char )( len >> 8 );
+        *(p++) = ( unsigned char )( len );
+        p += len;
+    }
+    else
+#else
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED)
     if( key_ex == MBEDTLS_KEY_EXCHANGE_DHE_PSK )
     {
@@ -1208,6 +1230,7 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
         return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );

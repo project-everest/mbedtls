@@ -79,7 +79,7 @@ int mbedtls_x25519_read_params( mbedtls_x25519_context *ctx,
                         const unsigned char **buf, const unsigned char *end );
 
 /**
- * \brief           This function sets up an ECDH context from an EC key.
+ * \brief           This function sets up an x25519 context from an EC key.
  *
  *                  It is used by clients and servers in place of the
  *                  ServerKeyEchange for static ECDH, and imports ECDH
@@ -97,7 +97,7 @@ int mbedtls_x25519_read_params( mbedtls_x25519_context *ctx,
  *
  */
 int mbedtls_x25519_get_params( mbedtls_x25519_context *ctx, const mbedtls_ecp_keypair *key,
-    mbedtls_ecdh_side side );
+                        mbedtls_ecdh_side side );
 
 /**
  * \brief           This function derives and exports the shared secret.
@@ -125,8 +125,7 @@ int mbedtls_x25519_calc_secret( mbedtls_x25519_context *ctx, size_t *olen,
  * \brief           This function generates a public key and a TLS
  *                  ClientKeyExchange payload.
  *
- *                  This is the second function used by a TLS client for ECDH(E)
- *                  ciphersuites.
+ *                  This is the second function used by a TLS client for x25519.
  *
  * \see             ecp.h
  *
@@ -141,16 +140,15 @@ int mbedtls_x25519_calc_secret( mbedtls_x25519_context *ctx, size_t *olen,
  * \return          An \c MBEDTLS_ERR_ECP_XXX error code on failure.
  */
 int mbedtls_x25519_make_public( mbedtls_x25519_context *ctx, size_t *olen,
-    unsigned char *buf, size_t blen,
-    int( *f_rng )(void *, unsigned char *, size_t),
-    void *p_rng );
+                        unsigned char *buf, size_t blen,
+                        int( *f_rng )(void *, unsigned char *, size_t),
+                        void *p_rng );
 
 /**
  * \brief       This function parses and processes a TLS ClientKeyExchange
  *              payload.
  *
- *              This is the second function used by a TLS server for ECDH(E)
- *              ciphersuites.
+ *              This is the second function used by a TLS server for x25519.
  *
  * \see         ecp.h
  *
@@ -162,33 +160,7 @@ int mbedtls_x25519_make_public( mbedtls_x25519_context *ctx, size_t *olen,
  * \return      An \c MBEDTLS_ERR_ECP_XXX error code on failure.
  */
 int mbedtls_x25519_read_public( mbedtls_x25519_context *ctx,
-    const unsigned char *buf, size_t blen );
-
-
-
-
-
-/**
- * \brief           This function sets up an x25519 context from an EC key.
- *
- *                  It is used by clients and servers in place of the
- *                  ServerKeyEchange for static ECDH, and imports ECDH
- *                  parameters from the EC key information of a certificate.
- *
- * \see             ecp.h
- *
- * \param ctx       The ECDH context to set up.
- * \param key       The EC key to use.
- * \param side      Defines the source of the key: 1: Our key, or
- *                  0: The key of the peer.
- *
- * \return          \c 0 on success.
- * \return          An \c MBEDTLS_ERR_ECP_XXX error code on failure.
- *
- */
-int mbedtls_x25519_use_static_key( mbedtls_x25519_context *ctx,
-                     const mbedtls_ecp_keypair *key, mbedtls_ecdh_side side );
-
+                        const unsigned char *buf, size_t blen );
 
 #ifdef __cplusplus
 }

@@ -414,6 +414,9 @@ void mbedtls_pk_kex_set_type( mbedtls_pk_context *ctx, mbedtls_kex_type type )
         default: break;
     }
     kex_ctx->type = type;
+    kex_ctx->point_format = MBEDTLS_ECP_PF_UNCOMPRESSED;
+    kex_ctx->read_params_buf = 0;
+    kex_ctx->read_params_end = 0;
 }
 
 int mbedtls_pk_kex_initiate( mbedtls_pk_context *ctx, mbedtls_kex_type type,
@@ -433,6 +436,7 @@ int mbedtls_pk_kex_initiate( mbedtls_pk_context *ctx, mbedtls_kex_type type,
     case MBEDTLS_KEX_ECDHE:
     {
         mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
+        ecdh_ctx->point_format = kex_ctx->point_format;
         if( (ret = mbedtls_ecp_group_load( &ecdh_ctx->grp, kex_ctx->gid.ecdhe )) != 0 ||
             (ret = mbedtls_ecdh_make_params( ecdh_ctx, olen, buf, blen, f_rng, p_rng )) != 0 )
             return ret;
@@ -480,9 +484,9 @@ int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
     case MBEDTLS_KEX_ECDHE:
     {
         mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
-        if( (ret = mbedtls_ecdh_read_public( ecdh_ctx, inbuf, inbuflen )) != 0 ||
-            (ret = mbedtls_ecdh_calc_secret( ecdh_ctx, olen, outbuf, outbuflen, f_rng, p_rng ) != 0) )
-            return ret;
+        if( ret == 0 ) ret = mbedtls_ecdh_read_public( ecdh_ctx, inbuf, inbuflen );
+        if( ret == 0 && outbuflen > 0 ) ret = mbedtls_ecdh_calc_secret( ecdh_ctx, olen, outbuf, outbuflen, f_rng, p_rng );
+        if( ret != 0 ) return ret;
         /* TODO: *_calc_secret saves a TLS-specific serialization of the shared
             secret in the context. Replace with proper, TLS-indepdentent datatype
             for key shares? */
@@ -491,17 +495,17 @@ int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
     case MBEDTLS_KEX_FFDHE:
     {
         mbedtls_dhm_context *dh_ctx = kex_ctx->ctx.ffdhe;
-        if( (ret = mbedtls_dhm_read_public( dh_ctx, inbuf, inbuflen )) != 0 ||
-            (ret = mbedtls_dhm_calc_secret( dh_ctx, outbuf, outbuflen, olen, f_rng, p_rng )) != 0 )
-            return ret;
+        if( ret == 0 ) ret = mbedtls_dhm_read_public( dh_ctx, inbuf, inbuflen );
+        if( ret == 0 && outbuflen > 0) ret = mbedtls_dhm_calc_secret( dh_ctx, outbuf, outbuflen, olen, f_rng, p_rng );
+        if( ret != 0 ) return ret;
         break;
     }
     case MBEDTLS_KEX_X25519:
     {
         mbedtls_x25519_context *x25519_ctx = kex_ctx->ctx.x25519;
-        if( (ret = mbedtls_x25519_read_public( x25519_ctx, inbuf, inbuflen )) != 0 ||
-            (ret = mbedtls_x25519_calc_secret( x25519_ctx, olen, outbuf, outbuflen, f_rng, p_rng )) != 0 )
-            return ret;
+        if( ret == 0 ) ret = mbedtls_x25519_read_public( x25519_ctx, inbuf, inbuflen );
+        if( ret == 0 && outbuflen > 0) ret = mbedtls_x25519_calc_secret( x25519_ctx, olen, outbuf, outbuflen, f_rng, p_rng );
+        if( ret != 0 ) return ret;
         break;
     }
     default:
@@ -519,42 +523,64 @@ int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
 {
     int ret = 0;
     mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
+    unsigned char *p = kex_ctx->read_params_buf;
+    const unsigned char **rp_buf = ( const unsigned char ** )&p;
 
-    if( ctx == NULL || ctx->pk_info == NULL )
+    if( ctx == NULL ||
+        ctx->pk_info == NULL ||
+        kex_ctx->type == MBEDTLS_KEX_NONE )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    // TODO: Include mbedtls_*_read_params?
     switch( kex_ctx->type )
     {
     case MBEDTLS_KEX_ECDHE: {
         mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
-        if( (ret = mbedtls_ecdh_make_public( ecdh_ctx, public_olen, public_buf, public_buflen, f_rng, p_rng )) != 0 ||
-            (ret = mbedtls_ecdh_calc_secret( ecdh_ctx, secret_olen, secret_buf, secret_buflen, f_rng, p_rng )) != 0 )
-            return ret;
+        if( ret == 0 && kex_ctx->read_params_buf != NULL ) ret = mbedtls_ecdh_read_params( ecdh_ctx, rp_buf, kex_ctx->read_params_end );
+        if( ret == 0 && public_buflen > 0 ) ret = mbedtls_ecdh_make_public( ecdh_ctx, public_olen, public_buf, public_buflen, f_rng, p_rng );
+        if( ret == 0 && secret_buflen > 0 ) ret = mbedtls_ecdh_calc_secret( ecdh_ctx, secret_olen, secret_buf, secret_buflen, f_rng, p_rng );
         break;
         }
     case MBEDTLS_KEX_FFDHE: {
         mbedtls_dhm_context *dh_ctx = kex_ctx->ctx.ffdhe;
-        size_t psz = (int)mbedtls_mpi_size( &dh_ctx->P );
-        *public_olen = public_buflen;
-        if( (ret = mbedtls_dhm_make_public( dh_ctx, psz, public_buf, public_buflen, f_rng, p_rng )) != 0 ||
-            (ret = mbedtls_dhm_calc_secret( dh_ctx, secret_buf, secret_buflen, secret_olen, f_rng, p_rng )) != 0 )
-            return ret;
+        if( ret == 0 && kex_ctx->read_params_buf != NULL ) ret = mbedtls_dhm_read_params( dh_ctx, &p, kex_ctx->read_params_end );
+        if( public_olen ) *public_olen = dh_ctx->len;
+        if( ret == 0 && public_buflen > 0 ) ret = mbedtls_dhm_make_public( dh_ctx, dh_ctx->len, public_buf, dh_ctx->len, f_rng, p_rng );
+        if( ret == 0 && secret_buflen > 0) ret = mbedtls_dhm_calc_secret( dh_ctx, secret_buf, dh_ctx->len, secret_olen, f_rng, p_rng );
         break;
         }
     case MBEDTLS_KEX_X25519:
     {
         mbedtls_x25519_context *x25519_ctx = kex_ctx->ctx.x25519;
-        if( (ret = mbedtls_x25519_make_public( x25519_ctx, public_olen, public_buf, public_buflen, f_rng, p_rng )) != 0 ||
-            (ret = mbedtls_x25519_calc_secret( x25519_ctx, secret_olen, secret_buf, secret_buflen, f_rng, p_rng )) != 0 )
-            return ret;
+        if( ret == 0 && kex_ctx->read_params_buf != NULL ) ret = mbedtls_x25519_read_params( x25519_ctx, rp_buf, kex_ctx->read_params_end );
+        if( ret == 0 && public_buflen > 0) ret = mbedtls_x25519_make_public( x25519_ctx, public_olen, public_buf, public_buflen, f_rng, p_rng );
+        if( ret == 0 && secret_buflen > 0 ) ret = mbedtls_x25519_calc_secret( x25519_ctx, secret_olen, secret_buf, secret_buflen, f_rng, p_rng );
         break;
     }
     default:
-        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+        ret = MBEDTLS_ERR_PK_BAD_INPUT_DATA;
     }
 
+    if( kex_ctx->read_params_buf )
+        free( kex_ctx->read_params_buf );
+    kex_ctx->read_params_buf = 0;
+    kex_ctx->read_params_end = 0;
     return( ret );
+}
+
+int mbedtls_pk_kex_get_params( const mbedtls_pk_context *ctx,
+                const mbedtls_ecp_keypair *key, mbedtls_ecdh_side side )
+{
+    mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
+    int ret = 0;
+    switch( kex_ctx->type )
+    {
+    case MBEDTLS_KEX_ECDHE: ret = mbedtls_ecdh_get_params( kex_ctx->ctx.ecdhe, key, side ); break;
+    case MBEDTLS_KEX_X25519: ret = mbedtls_x25519_get_params( kex_ctx->ctx.x25519, key, side ); break;
+    case MBEDTLS_KEX_FFDHE:
+    default:
+        ret = MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE;
+    }
+    return ret;
 }
 
 #endif
