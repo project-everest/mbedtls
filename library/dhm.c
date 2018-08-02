@@ -136,7 +136,8 @@ void mbedtls_dhm_init( mbedtls_dhm_context *ctx )
             break; \
         }
 
-int mbedtls_dhm_group_load( mbedtls_dhm_group *grp, mbedtls_dhm_group_id id ) {
+int mbedtls_dhm_group_load( mbedtls_dhm_group *grp, mbedtls_dhm_group_id id,
+                            const mbedtls_mpi *p, const mbedtls_mpi *g ) {
     int ret;
 
     if( grp == NULL )
@@ -144,15 +145,18 @@ int mbedtls_dhm_group_load( mbedtls_dhm_group *grp, mbedtls_dhm_group_id id ) {
 
     mbedtls_mpi_init( &grp->P );
     mbedtls_mpi_init( &grp->G );
+    grp->id = id;
 
     switch(id) {
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
     case MBEDTLS_DHM_RFC5114_MODP_2048: {
-        if(( ret = mbedtls_mpi_read_string( &grp->P, 16, MBEDTLS_DHM_RFC5114_MODP_2048_P ) ) != 0 )
+        if( ( ret = mbedtls_mpi_read_string( &grp->P, 16, MBEDTLS_DHM_RFC5114_MODP_2048_P ) ) != 0 )
             return ret;
-        if(( ret = mbedtls_mpi_read_string( &grp->G, 16, MBEDTLS_DHM_RFC5114_MODP_2048_G ) ) != 0 )
+        if( ( ret = mbedtls_mpi_read_string( &grp->G, 16, MBEDTLS_DHM_RFC5114_MODP_2048_G ) ) != 0 )
             return ret;
         break;
     }
+#endif
     SELECT_GROUP( grp, MBEDTLS_DHM_RFC3526_MODP_2048 )
     SELECT_GROUP( grp, MBEDTLS_DHM_RFC3526_MODP_3072 )
     SELECT_GROUP( grp, MBEDTLS_DHM_RFC3526_MODP_4096 )
@@ -161,6 +165,11 @@ int mbedtls_dhm_group_load( mbedtls_dhm_group *grp, mbedtls_dhm_group_id id ) {
     SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE4096 )
     SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE6144 )
     SELECT_GROUP( grp, MBEDTLS_DHM_RFC7919_FFDHE8192 )
+    case MBEDTLS_DHM_OTHER:
+        if( ( ret = mbedtls_mpi_copy( &grp->P, p ) ) != 0 ||
+            ( ret = mbedtls_mpi_copy( &grp->G, g ) ) != 0 )
+            return ret;
+        break;
     default:
         ret = MBEDTLS_ERR_DHM_SET_GROUP_FAILED;
     }

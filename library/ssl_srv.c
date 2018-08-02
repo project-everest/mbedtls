@@ -2824,7 +2824,7 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
 
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
     ( ( void )ecdh_ctx );
-    mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+    mbedtls_pk_kex_setup( &ssl->handshake->pk_ctx, MBEDTLS_GROUP_FAMILY_ECDHE, 0 );
 
     if( ( ret = mbedtls_pk_kex_get_params( &ssl->handshake->pk_ctx,
                                             mbedtls_pk_ec( *mbedtls_ssl_own_key( ssl ) ),
@@ -2951,7 +2951,9 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
 
         mbedtls_pk_context *ctx = &ssl->handshake->pk_ctx;
         mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
-        mbedtls_kex_type kex_type = MBEDTLS_KEX_NONE;
+        mbedtls_group *group = calloc( 1, sizeof( mbedtls_group ) );
+
+        const mbedtls_ssl_ciphersuite_t *ciphersuite_info = ssl->transform_negotiate->ciphersuite_info;
 
         if( mbedtls_ssl_ciphersuite_uses_ecdhe( ciphersuite_info ) )
         {
@@ -2961,36 +2963,50 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
             /* Match our preference list against the offered curves */
             for( gid = ssl->conf->curve_list; *gid != MBEDTLS_ECP_DP_NONE; gid++ )
                 for( curve = ssl->handshake->curves; *curve != NULL; curve++ )
-                    if( (*curve)->grp_id == *gid )
+                    if( ( *curve )->grp_id == *gid )
                         goto curve_matching_done;
 
-            curve_matching_done:
+        curve_matching_done:
             if( curve == NULL || *curve == NULL )
             {
-                MBEDTLS_SSL_DEBUG_MSG( 1, ("no matching curve for ECDHE") );
-                return(MBEDTLS_ERR_SSL_NO_CIPHER_CHOSEN);
+                MBEDTLS_SSL_DEBUG_MSG( 1, ( "no matching curve for ECDHE" ) );
+                return( MBEDTLS_ERR_SSL_NO_CIPHER_CHOSEN );
             }
 
-            MBEDTLS_SSL_DEBUG_MSG( 2, ("ECDHE curve: %s", (*curve)->name) );
+            MBEDTLS_SSL_DEBUG_MSG( 2, ( "ECDHE curve: %s", ( *curve )->name ) );
 
-            kex_ctx->gid.ecdhe = (*curve)->grp_id;
-            kex_type = (*curve)->grp_id == MBEDTLS_ECP_DP_CURVE25519 ? MBEDTLS_KEX_X25519 : MBEDTLS_KEX_ECDHE;
+            if( ( *curve )->grp_id == MBEDTLS_ECP_DP_CURVE25519 )
+                group->family = MBEDTLS_GROUP_FAMILY_X25519;
+            else
+            {
+                group->family = MBEDTLS_GROUP_FAMILY_ECDHE;
+                group->data.ecdhe.id = ( *curve )->grp_id;
+            }
         }
-        else if( mbedtls_ssl_ciphersuite_uses_dhe( ciphersuite_info ) ) {
-            kex_type = MBEDTLS_KEX_FFDHE;
-            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: X ", &kex_ctx->ctx.ffdhe->X );
-            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &kex_ctx->ctx.ffdhe->P );
-            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: G ", &kex_ctx->ctx.ffdhe->G );
-            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: GX", &kex_ctx->ctx.ffdhe->GX );
+        else if( mbedtls_ssl_ciphersuite_uses_dhe( ciphersuite_info ) )
+        {
+            group->family = MBEDTLS_GROUP_FAMILY_FFDHE;
+            group->data.ffdhe.id = MBEDTLS_DHM_OTHER;
+            if( ( ret = mbedtls_mpi_copy( &group->data.ffdhe.P, &ssl->conf->dhm_P ) ) != 0 ||
+                ( ret = mbedtls_mpi_copy( &group->data.ffdhe.G, &ssl->conf->dhm_G ) ) != 0 )
+                return ret;
         }
 
-        if( (ret = mbedtls_pk_kex_initiate( ctx, kex_type,
-                                    ssl->out_msg + ssl->out_msglen,
-                                    MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen, &len,
-                                    ssl->conf->f_rng, ssl->conf->p_rng )) )
+        if( (ret = mbedtls_pk_kex_initiate( ctx, group,
+                                            ssl->out_msg + ssl->out_msglen,
+                                            MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen,
+                                            &len,
+                                            ssl->conf->f_rng, ssl->conf->p_rng )) != 0 )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ("mbedtls_pk_kex_initiate") );
             return ret;
+        }
+
+        if( mbedtls_ssl_ciphersuite_uses_dhe( ciphersuite_info ) )
+        {
+            mbedtls_dhm_group *grp = &kex_ctx->group->data.ffdhe;
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &grp->P );
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: G ", &grp->G );
         }
 
 #if defined(MBEDTLS_KEY_EXCHANGE__WITH_SERVER_SIGNATURE__ENABLED)
@@ -3801,14 +3817,15 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
             mbedtls_ssl_get_dhm_ctx( ssl )->len = pplen;
         }
 
-        if( (ret = mbedtls_pk_kex_read_public( &ssl->handshake->pk_ctx,
-                                               pp, pplen,
-                                               ssl->handshake->premaster, MBEDTLS_PREMASTER_SIZE,
-                                               &ssl->handshake->pmslen,
-                                               ssl->conf->f_rng, ssl->conf->p_rng )) )
+        if( ( ret = mbedtls_pk_kex_read_public( &ssl->handshake->pk_ctx,
+                                                pp, pplen,
+                                                ssl->handshake->premaster,
+                                                MBEDTLS_PREMASTER_SIZE,
+                                                &ssl->handshake->pmslen,
+                                                ssl->conf->f_rng, ssl->conf->p_rng ) ) )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_read_public", ret );
-            return(ret);
+            return( ret );
         }
     }
     else
@@ -3979,25 +3996,58 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK )
     {
+        size_t len;
+
         if( ( ret = ssl_parse_client_psk_identity( ssl, &p, end ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, ( "ssl_parse_client_psk_identity" ), ret );
             return( ret );
         }
 
-        if( ( ret = mbedtls_pk_kex_read_public( &ssl->handshake->pk_ctx, p, end - p, 0, 0, 0, 0, 0 ) != 0 ) )
+        MBEDTLS_SSL_DEBUG_BUF( 3, "mbedtls_pk_kex_read_public input", p, end - p );
+
+        if( ( ret = mbedtls_pk_kex_read_public( &ssl->handshake->pk_ctx,
+                                                p, end - p,
+                                                ssl->handshake->premaster + 2,
+                                                MBEDTLS_PREMASTER_SIZE - 2,
+                                                &len,
+                                                ssl->conf->f_rng, ssl->conf->p_rng ) != 0 ) )
         {
-            {
-                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_read_public", ret );
-                return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
-            }
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_read_public", ret );
+            return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE_RP );
         }
 
-        if( ( ret = mbedtls_ssl_psk_derive_premaster( ssl,
-                        ciphersuite_info->key_exchange ) ) != 0 )
         {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_psk_derive_premaster", ret );
-            return( ret );
+            unsigned char *p = ssl->handshake->premaster;
+            unsigned char *end = p + MBEDTLS_PREMASTER_SIZE;
+            const unsigned char *psk = ssl->conf->psk;
+            size_t psk_len = ssl->conf->psk_len;
+
+            /* If the psk callback was called, use its result */
+            if( ssl->handshake->psk != NULL )
+            {
+                psk = ssl->handshake->psk;
+                psk_len = ssl->handshake->psk_len;
+            }
+
+            *( p++ ) = ( unsigned char )( len >> 8 );
+            *( p++ ) = ( unsigned char )( len );
+            p += len;
+
+            /* opaque psk<0..2^16-1>; */
+            if( end - p < 2 )
+                return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+
+            *( p++ ) = ( unsigned char )( psk_len >> 8 );
+            *( p++ ) = ( unsigned char )( psk_len );
+
+            if( end < p || ( size_t )( end - p ) < psk_len )
+                return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+
+            memcpy( p, psk, psk_len );
+            p += psk_len;
+
+            ssl->handshake->pmslen = p - ssl->handshake->premaster;
         }
     }
     else

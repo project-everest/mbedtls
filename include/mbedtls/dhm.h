@@ -1060,10 +1060,11 @@ MBEDTLS_DEPRECATED typedef char const * mbedtls_deprecated_constant_t;
 
 #define MBEDTLS_DHM_RFC7919_FFDHE8192_G_BIN { 0x02 }
 
-
 typedef enum
 {
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
     MBEDTLS_DHM_RFC5114_MODP_2048,
+#endif
     MBEDTLS_DHM_RFC3526_MODP_2048,
     MBEDTLS_DHM_RFC3526_MODP_3072,
     MBEDTLS_DHM_RFC3526_MODP_4096,
@@ -1071,7 +1072,8 @@ typedef enum
     MBEDTLS_DHM_RFC7919_FFDHE3072,
     MBEDTLS_DHM_RFC7919_FFDHE4096,
     MBEDTLS_DHM_RFC7919_FFDHE6144,
-    MBEDTLS_DHM_RFC7919_FFDHE8192
+    MBEDTLS_DHM_RFC7919_FFDHE8192,
+    MBEDTLS_DHM_OTHER
 } mbedtls_dhm_group_id;
 
 typedef struct {
@@ -1080,6 +1082,6 @@ typedef struct {
     mbedtls_mpi G;              /*!< The generator. */
 } mbedtls_dhm_group;
 
-int mbedtls_dhm_group_load( mbedtls_dhm_group *grp, mbedtls_dhm_group_id id );
+int mbedtls_dhm_group_load( mbedtls_dhm_group *grp, mbedtls_dhm_group_id id, const mbedtls_mpi *p, const mbedtls_mpi *g);
 
 #endif /* dhm.h */

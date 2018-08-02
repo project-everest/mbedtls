@@ -1997,7 +1997,7 @@ static int ssl_parse_server_dh_params( mbedtls_ssl_context *ssl, unsigned char *
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED */
-#endif /* MBEDTLS_PK_KEX_SUPPORT */
+#endif /* !MBEDTLS_PK_KEX_SUPPORT */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) ||                     \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED) ||                   \
@@ -2324,7 +2324,7 @@ static int ssl_parse_server_key_exchange( mbedtls_ssl_context *ssl )
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA )
     {
         #if defined(MBEDTLS_PK_KEX_SUPPORT)
-        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
+        mbedtls_pk_kex_setup( &ssl->handshake->pk_ctx, MBEDTLS_GROUP_FAMILY_ECDHE, NULL );
         #endif
         if( ( ret = ssl_get_ecdh_params_from_cert( ssl ) ) != 0 )
         {
@@ -2410,56 +2410,19 @@ static int ssl_parse_server_key_exchange( mbedtls_ssl_context *ssl )
           MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED */
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
     if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK )
-    {
-        mbedtls_kex_context *ctx = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx );
-        unsigned int i = 0;
-        unsigned char *cp = p;
-        mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_FFDHE );
-        for( i = 0; i < 3; i++ )
-        {
-            size_t n = ( cp[0] << 8 ) | cp[1];
-            cp += n + 2;
-        }
-        ctx->read_params_buf = mbedtls_calloc( cp - p, 1 );
-        ctx->read_params_end = ctx->read_params_buf + (cp - p);
-        memcpy( ctx->read_params_buf, p, cp - p );
-        p = cp;
-    }
-    else if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_RSA ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA )
-    {
+   {
         mbedtls_kex_context *ctx = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx );
-        mbedtls_ecp_group *grp = calloc( 1, sizeof( mbedtls_ecp_group ) );
-        unsigned char *cp = p;
+        size_t share_size;
 
-        if( ( ret = mbedtls_ecp_tls_read_group( grp, (const unsigned char **)&cp, end - cp ) ) != 0 )
-            return( ret );
-
-        if( grp->id == MBEDTLS_ECP_DP_CURVE25519 )
-        {
-            mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_X25519 );
-            ctx->read_params_buf = mbedtls_calloc( 33, 1 );
-            ctx->read_params_end = ctx->read_params_buf + 33;
-            memcpy( ctx->read_params_buf, cp, 33 );
-            p = cp + 33;
-        }
-        else
-        {
-            size_t plen, data_len;
-            mbedtls_pk_kex_set_type( &ssl->handshake->pk_ctx, MBEDTLS_KEX_ECDHE );
-
-            plen = mbedtls_mpi_size( &grp->P );
-            data_len = 1 + 2 * plen + 1;
-
-            ctx->read_params_buf = mbedtls_calloc( 3 + data_len, 1 );
-            ctx->read_params_end = ctx->read_params_buf + 3 + data_len;
-            memcpy( ctx->read_params_buf, p, 3 + data_len );
-            p = cp + data_len;
-        }
-
-        free( grp );
+        share_size = mbedtls_ssl_share_size( p, end, ciphersuite_info->key_exchange );
+        ctx->read_params_buf = mbedtls_calloc( share_size, 1 );
+        ctx->read_params_end = ctx->read_params_buf + share_size;
+        memcpy( ctx->read_params_buf, p, share_size );
+        p += share_size;
     }
     else
 #else
@@ -2912,6 +2875,7 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
         i = ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA ? 6 : 4;
 
         if( ( ret = mbedtls_pk_kex_respond( &ssl->handshake->pk_ctx,
+                                            mbedtls_ssl_group_family( ciphersuite_info->key_exchange ),
                                             &ssl->out_msg[i], out_msg_len, &n,
                                             ssl->handshake->premaster, MBEDTLS_PREMASTER_SIZE, &ssl->handshake->pmslen,
                                             ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
@@ -2922,9 +2886,12 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
 
         if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_RSA )
         {
-            size_t n = mbedtls_ssl_get_dhm_ctx( ssl )->len;
+            mbedtls_dhm_context *dhm_ctx = mbedtls_ssl_get_dhm_ctx( ssl );
+            size_t n = dhm_ctx->len;
             ssl->out_msg[4] = ( unsigned char )( n >> 8 );
             ssl->out_msg[5] = ( unsigned char )( n );
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: P ", &dhm_ctx->P );
+            MBEDTLS_SSL_DEBUG_MPI( 3, "DHM: G ", &dhm_ctx->G );
         }
     }
     else
@@ -3062,12 +3029,16 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
         if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK ||
             ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK )
         {
-            mbedtls_dhm_context *dhm_ctx = mbedtls_ssl_get_dhm_ctx( ssl );
+            int ip = i;
 
-            // CMW: First have of *_kex_respond; mbedtls_ssl_psk_derive_premaster does the second part.
+            if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK )
+                i += 2;
+
+            // CMW: First half of *_kex_respond; mbedtls_ssl_psk_derive_premaster does the second part.
             // Should be combined into on *_kex_respond?
             if( ( ret = mbedtls_pk_kex_respond( &ssl->handshake->pk_ctx,
-                                                &ssl->out_msg[i+2], MBEDTLS_SSL_MAX_CONTENT_LEN - i, &n,
+                                                mbedtls_ssl_group_family( ciphersuite_info->key_exchange ),
+                                                &ssl->out_msg[i], MBEDTLS_SSL_MAX_CONTENT_LEN - i, &n,
                                                 0, 0, 0,
                                                 ssl->conf->f_rng, ssl->conf->p_rng ) != 0 ) )
             {
@@ -3077,6 +3048,7 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
 
             if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK )
             {
+                mbedtls_dhm_context *dhm_ctx = mbedtls_ssl_get_dhm_ctx( ssl );
                 n = dhm_ctx->len;
 
                 if( i + 2 + n > MBEDTLS_SSL_MAX_CONTENT_LEN )
@@ -3086,8 +3058,8 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                     return( MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL );
                 }
 
-                ssl->out_msg[i++] = ( unsigned char )( n >> 8 );
-                ssl->out_msg[i++] = ( unsigned char )( n );
+                ssl->out_msg[ip]     = ( unsigned char )( n >> 8 );
+                ssl->out_msg[ip + 1] = ( unsigned char )( n );
             }
         }
         else

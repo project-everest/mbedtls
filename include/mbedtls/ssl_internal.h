@@ -26,6 +26,7 @@
 
 #include "ssl.h"
 #include "cipher.h"
+#include "debug.h"
 
 #if defined(MBEDTLS_MD5_C)
 #include "md5.h"
@@ -683,7 +684,8 @@ int mbedtls_ssl_get_key_exchange_md_tls1_2( mbedtls_ssl_context *ssl,
 static inline mbedtls_dhm_context *mbedtls_ssl_get_dhm_ctx( const mbedtls_ssl_context *ssl )
 {
 #if defined( MBEDTLS_PK_KEX_SUPPORT )
-    if( mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->type != MBEDTLS_KEX_FFDHE )
+    mbedtls_group *group = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->group;
+    if( group && group->family != MBEDTLS_GROUP_FAMILY_FFDHE )
         return 0;
     return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.ffdhe;
 #else
@@ -694,7 +696,8 @@ static inline mbedtls_dhm_context *mbedtls_ssl_get_dhm_ctx( const mbedtls_ssl_co
 static inline mbedtls_ecdh_context *mbedtls_ssl_get_ecdh_ctx( const mbedtls_ssl_context *ssl )
 {
 #if defined( MBEDTLS_PK_KEX_SUPPORT )
-    if( mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->type != MBEDTLS_KEX_ECDHE )
+    mbedtls_group *group = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->group;
+    if( group && group->family != MBEDTLS_GROUP_FAMILY_ECDHE )
         return 0;
     return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.ecdhe;
 #else
@@ -705,11 +708,90 @@ static inline mbedtls_ecdh_context *mbedtls_ssl_get_ecdh_ctx( const mbedtls_ssl_
 #if defined( MBEDTLS_PK_KEX_SUPPORT )
 static inline mbedtls_x25519_context *mbedtls_ssl_get_x25519_ctx( const mbedtls_ssl_context *ssl )
 {
-    if( mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->type != MBEDTLS_KEX_X25519 )
+    mbedtls_group *group = mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->group;
+    if( group && group->family != MBEDTLS_GROUP_FAMILY_X25519 )
         return 0;
     return mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->ctx.x25519;
 }
 #endif
+
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+static inline mbedtls_group_family mbedtls_ssl_group_family( mbedtls_key_exchange_type_t kextype )
+{
+    switch( kextype )
+    {
+    case MBEDTLS_KEY_EXCHANGE_RSA:
+    case MBEDTLS_KEY_EXCHANGE_DHE_RSA:
+    case MBEDTLS_KEY_EXCHANGE_PSK:
+    case MBEDTLS_KEY_EXCHANGE_DHE_PSK:
+    case MBEDTLS_KEY_EXCHANGE_RSA_PSK:
+        return MBEDTLS_GROUP_FAMILY_FFDHE;
+
+    case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
+    case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+    case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
+    case MBEDTLS_KEY_EXCHANGE_ECDH_RSA:
+    case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
+    case MBEDTLS_KEY_EXCHANGE_ECJPAKE:
+        return MBEDTLS_GROUP_FAMILY_ECDHE;
+
+    case MBEDTLS_KEY_EXCHANGE_NONE:
+    default:
+        return MBEDTLS_GROUP_FAMILY_NONE;
+    }
+}
+
+static inline size_t mbedtls_ssl_share_size( const unsigned char *p,
+                    const unsigned char *end, mbedtls_key_exchange_type_t kextype )
+{
+    switch( kextype )
+    {
+    case MBEDTLS_KEY_EXCHANGE_NONE: return 0;
+    case MBEDTLS_KEY_EXCHANGE_RSA:
+    case MBEDTLS_KEY_EXCHANGE_DHE_RSA:
+    case MBEDTLS_KEY_EXCHANGE_PSK:
+    case MBEDTLS_KEY_EXCHANGE_DHE_PSK:
+    case MBEDTLS_KEY_EXCHANGE_RSA_PSK:
+    {
+        unsigned i = 0;
+        const unsigned char * cp = p;
+        for( i = 0; i < 3; i++ )
+        {
+            size_t n = ( cp[0] << 8 ) | cp[1];
+            cp += n + 2;
+        }
+        return cp - p;
+    }
+    case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
+    case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+    case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
+    case MBEDTLS_KEY_EXCHANGE_ECDH_RSA:
+    case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
+    case MBEDTLS_KEY_EXCHANGE_ECJPAKE:
+    {
+        mbedtls_ecp_group grp;
+        size_t res = 0;
+
+        mbedtls_ecp_group_init( &grp );
+
+        if( ( mbedtls_ecp_tls_read_group( &grp, ( const unsigned char ** )&p, end - p ) ) != 0 )
+            return 0;
+
+        if( grp.id == MBEDTLS_ECP_DP_CURVE25519 )
+            res = 3 + 33;
+        else
+        {
+            size_t plen = mbedtls_mpi_size( &grp.P );
+            res = 3 + 1 + 2 * plen + 1;
+        }
+
+        return res;
+    }
+    default: return( 0 );
+    }
+}
+
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
 
 #ifdef __cplusplus
 }

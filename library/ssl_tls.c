@@ -1170,6 +1170,7 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
         size_t len;
 
         if( ( ret = mbedtls_pk_kex_respond( &ssl->handshake->pk_ctx,
+                                            mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->group->family,
                                             0, 0, 0,
                                             p + 2, end - ( p + 2 ), &len,
                                             ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )

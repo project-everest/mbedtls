@@ -528,7 +528,7 @@ static void *pk_kex_alloc( void )
     if( ctx != NULL )
         memset( ctx, 0, sizeof( mbedtls_kex_context ) );
 
-    ctx->type = MBEDTLS_KEX_NONE;
+    ctx->group = NULL;
 
     return ( ctx );
 }
@@ -536,21 +536,28 @@ static void *pk_kex_alloc( void )
 static void pk_kex_free( void *ctx )
 {
     mbedtls_kex_context *kex_ctx = (mbedtls_kex_context *)ctx;
-    switch (kex_ctx->type) {
-    case MBEDTLS_KEX_ECDHE: {
-        mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
-        mbedtls_platform_zeroize( ecdh_ctx, sizeof( mbedtls_ecdh_context ) );
-        mbedtls_free( ecdh_ctx );
-        break;
+
+    if( kex_ctx != NULL && kex_ctx->group != NULL )
+    {
+        switch( kex_ctx->group->family ) {
+        case MBEDTLS_GROUP_FAMILY_ECDHE: {
+            mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
+            mbedtls_platform_zeroize( ecdh_ctx, sizeof( mbedtls_ecdh_context ) );
+            mbedtls_free( ecdh_ctx );
+            break;
         }
-    case MBEDTLS_KEX_FFDHE: {
-        mbedtls_dhm_context *dhm_ctx = kex_ctx->ctx.ffdhe;
-        mbedtls_platform_zeroize( dhm_ctx, sizeof( mbedtls_dhm_context ) );
-        mbedtls_free( dhm_ctx );
-        break;
+        case MBEDTLS_GROUP_FAMILY_FFDHE: {
+            mbedtls_dhm_context *dhm_ctx = kex_ctx->ctx.ffdhe;
+            mbedtls_platform_zeroize( dhm_ctx, sizeof( mbedtls_dhm_context ) );
+            mbedtls_free( dhm_ctx );
+            break;
         }
-    case MBEDTLS_KEX_NONE: break;
-    default: break;
+        case MBEDTLS_GROUP_FAMILY_NONE: break;
+        default: break;
+        }
+        mbedtls_platform_zeroize( kex_ctx->group, sizeof( mbedtls_group ) );
+        mbedtls_free( kex_ctx->group );
+        kex_ctx->group = NULL;
     }
     mbedtls_platform_zeroize( ctx, sizeof( mbedtls_kex_context ) );
     mbedtls_free( ctx );

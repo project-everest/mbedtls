@@ -625,22 +625,35 @@ int mbedtls_pk_load_file( const char *path, unsigned char **buf, size_t *n );
  * Key Exchange
  */
 
-typedef enum { MBEDTLS_KEX_NONE, MBEDTLS_KEX_FFDHE, MBEDTLS_KEX_ECDHE, MBEDTLS_KEX_X25519 } mbedtls_kex_type;
+typedef enum {
+    MBEDTLS_GROUP_FAMILY_NONE,
+    MBEDTLS_GROUP_FAMILY_FFDHE,
+    MBEDTLS_GROUP_FAMILY_ECDHE,
+    MBEDTLS_GROUP_FAMILY_X25519
+}
+mbedtls_group_family;
+
+typedef union
+{
+    mbedtls_ecdh_context *ecdhe;
+    mbedtls_dhm_context *ffdhe;
+    mbedtls_x25519_context *x25519;
+}
+mbedtls_group_context;
 
 typedef struct
 {
-    mbedtls_kex_type type;
-    /* TODO: Introduce proper abstraction of key-exchange contexts and group
-       ids instead of these unions? */
+    mbedtls_group_family family;
     union {
-        mbedtls_ecdh_context *ecdhe;
-        mbedtls_dhm_context *ffdhe;
-        mbedtls_x25519_context *x25519;
-    } ctx;
-    union {
-        mbedtls_ecp_group_id ecdhe;
-        mbedtls_dhm_group_id ffdhe;
-    } gid;
+        mbedtls_ecp_group ecdhe;
+        mbedtls_dhm_group ffdhe;
+    } data;
+} mbedtls_group;
+
+typedef struct
+{
+    mbedtls_group_context ctx;
+    mbedtls_group *group;
     int point_format;
 
     unsigned char *read_params_buf;
@@ -674,7 +687,7 @@ static inline mbedtls_kex_context *mbedtls_pk_key_exchange( const mbedtls_pk_con
  *
  * \return          0 if successful, or a specific error code
  */
-void mbedtls_pk_kex_set_type( mbedtls_pk_context *ctx, mbedtls_kex_type type );
+void mbedtls_pk_kex_setup( mbedtls_pk_context *ctx, mbedtls_group_family family, mbedtls_group *group );
 
 /**
  * \brief
@@ -684,7 +697,7 @@ void mbedtls_pk_kex_set_type( mbedtls_pk_context *ctx, mbedtls_kex_type type );
  * \return          0 if successful, or a specific error code
  */
 // typedef struct mbedtls_ssl_ciphersuite_t mbedtls_ssl_ciphersuite_t;
-int mbedtls_pk_kex_initiate( mbedtls_pk_context *ctx, mbedtls_kex_type type,
+int mbedtls_pk_kex_initiate( mbedtls_pk_context *ctx, mbedtls_group *group,
                 unsigned char *buf, size_t blen, size_t *olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
                 void *p_rng);
@@ -710,7 +723,7 @@ int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
  *
  * \return          0 if successful, or a specific error code
  */
-int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
+int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family,
                 unsigned char *public_buf, size_t public_buflen, size_t *public_olen,
                 unsigned char *secret_buf, size_t secret_buflen, size_t *secret_olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
@@ -723,9 +736,10 @@ int mbedtls_pk_kex_respond( const mbedtls_pk_context *ctx,
  *
  * \return          0 if successful, or a specific error code
  */
-int mbedtls_pk_kex_get_params( const mbedtls_pk_context *ctx,
+int mbedtls_pk_kex_get_params( mbedtls_pk_context *ctx,
                 const mbedtls_ecp_keypair *key, mbedtls_ecdh_side side);
-#endif
+
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
 
 #ifdef __cplusplus
 }
