@@ -1173,7 +1173,8 @@ int mbedtls_ssl_psk_derive_premaster( mbedtls_ssl_context *ssl, mbedtls_key_exch
                                             mbedtls_pk_key_exchange( &ssl->handshake->pk_ctx )->group->family,
                                             0, 0, 0,
                                             p + 2, end - ( p + 2 ), &len,
-                                            ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
+                                            ssl->conf->f_rng, ssl->conf->p_rng,
+                                            MBEDTLS_KEX_MULTIPLEXED ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_respond", ret );
             return( ret );

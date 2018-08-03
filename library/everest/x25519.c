@@ -75,7 +75,7 @@ int mbedtls_x25519_make_params( mbedtls_x25519_context *ctx, size_t *olen,
     *buf++ = MBEDTLS_ECP_TLS_CURVE25519 & 0xFF;
     *buf++ = 32;
 
-    base[0] = 9; // generator of x25519
+    base[0] = 9;
     Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, base );
 
     base[0] = 0;
@@ -107,12 +107,12 @@ int mbedtls_x25519_get_params( mbedtls_x25519_context *ctx, const mbedtls_ecp_ke
     switch( side ) {
     case MBEDTLS_ECDH_THEIRS:
         mbedtls_ecp_point_write_binary( &key->grp, &key->Q, MBEDTLS_ECP_PF_COMPRESSED, &olen, ctx->peer_point, 32 );
-        // untested; defensively throw an error for now.
+        /* untested; defensively throw an error for now. */
         return(MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE);
     case MBEDTLS_ECDH_OURS:
         mbedtls_mpi_write_binary( &key->d, ctx->our_secret, 32 );
-        // key->Q = key->d * base; do we need to set up ctx.peer_point here?
-        // untested; defensively throw an error for now.
+        /* CMW: key->Q = key->d * base; do we need to set up ctx.peer_point here? */
+        /* untested; defensively throw an error for now. */
         return( MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE );
     default:
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
@@ -124,7 +124,7 @@ int mbedtls_x25519_calc_secret( mbedtls_x25519_context *ctx, size_t *olen,
                         int( *f_rng )(void *, unsigned char *, size_t),
                         void *p_rng )
 {
-    // CMW: Is it okay that f_rng, p_rng are not used?
+    /* CMW: Is it okay that f_rng, p_rng are not used? */
     (( void )f_rng);
     (( void )p_rng);
 
@@ -135,7 +135,7 @@ int mbedtls_x25519_calc_secret( mbedtls_x25519_context *ctx, size_t *olen,
 
     Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, ctx->peer_point);
 
-    // Wipe the DH secret and don't let the peer chose a small subgroup point
+    /* Wipe the DH secret and don't let the peer chose a small subgroup point */
     memset( ctx->our_secret, 0, 32 );
     if( memcmp( buf, ctx->our_secret, 32) == 0 )
         return MBEDTLS_ERR_ECP_RANDOM_FAILED;
@@ -150,7 +150,7 @@ int mbedtls_x25519_make_public( mbedtls_x25519_context *ctx, size_t *olen,
 {
     unsigned char base[32] = { 0 };
 
-    // CMW: Is it okay that f_rng, p_rng are not used?
+    /* CMW: Is it okay that f_rng, p_rng are not used? */
     (( void )f_rng);
     (( void )p_rng);
 
@@ -162,7 +162,7 @@ int mbedtls_x25519_make_public( mbedtls_x25519_context *ctx, size_t *olen,
         return(MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL);
     *buf++ = 32;
 
-    base[0] = 9; // generator of x25519
+    base[0] = 9;
     Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, base );
 
     base[0] = 0;

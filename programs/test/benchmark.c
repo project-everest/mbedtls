@@ -77,6 +77,11 @@ int main( void )
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/ecdh.h"
 
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+#include "mbedtls/pk.h"
+#include "mbedtls/pk_internal.h"
+#endif
+
 #include "mbedtls/error.h"
 #include "mbedtls/ecp.h"
 
@@ -94,7 +99,7 @@ int main( void )
 /*
  * Size to use for the alloc buffer if MEMORY_BUFFER_ALLOC_C is defined.
  */
-#define HEAP_SIZE       (1u << 16)  // 64k
+#define HEAP_SIZE       (1u << 16)  /* 64k */
 
 #define BUFSIZE         1024
 #define HEADER_FORMAT   "  %-24s :  "
@@ -106,7 +111,7 @@ int main( void )
     "aes_cbc, aes_gcm, aes_ccm, aes_ctx, chachapoly,\n"                 \
     "aes_cmac, des3_cmac, poly1305\n"                                   \
     "havege, ctr_drbg, hmac_drbg\n"                                     \
-    "rsa, dhm, ecdsa, ecdh.\n"
+    "rsa, dhm, ecdsa, ecdh, key-exchanges.\n"
 
 #if defined(MBEDTLS_ERROR_C)
 #define PRINT_ERROR                                                     \
@@ -254,7 +259,8 @@ typedef struct {
          aria, camellia, blowfish, chacha20,
          poly1305,
          havege, ctr_drbg, hmac_drbg,
-         rsa, dhm, ecdsa, ecdh;
+         rsa, dhm, ecdsa, ecdh,
+         key_exchanges;
 } todo_list;
 
 int main( int argc, char *argv[] )
@@ -333,6 +339,8 @@ int main( int argc, char *argv[] )
                 todo.ecdsa = 1;
             else if( strcmp( argv[i], "ecdh" ) == 0 )
                 todo.ecdh = 1;
+            else if( strcmp( argv[i], "key-exchanges" ) == 0 )
+                todo.key_exchanges = 1;
             else
             {
                 mbedtls_printf( "Unrecognized option: %s\n", argv[i] );
@@ -988,6 +996,94 @@ int main( int argc, char *argv[] )
         }
     }
 #endif
+
+#if defined(MBEDTLS_PK_KEX_SUPPORT)
+    if( todo.key_exchanges )
+    {
+        int num_groups = 0, i = 0, ret = 0;
+
+#define ADDGROUP(DHM, F, X) { \
+        mbedtls_group *grp = &groups[num_groups]; \
+        grp->family = F; \
+        if (ret == 0) { \
+            if (DHM) \
+                ret = mbedtls_dhm_group_load( &grp->data.ffdhe, X, NULL, NULL ); \
+            else \
+            { \
+                mbedtls_ecp_group_init( &grp->data.ecdhe ); \
+                ret = mbedtls_ecp_group_load( &grp->data.ecdhe, X ); \
+            } \
+        } \
+        group_names[num_groups] = malloc(strlen( #X ) + 1) ; \
+        strcpy(group_names[num_groups++], #X ); \
+    }
+
+        mbedtls_group groups[23];
+        char *group_names[23];
+        char title[50];
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC5114_MODP_2048 );
+#endif
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC3526_MODP_2048 );
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC3526_MODP_3072 );
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC3526_MODP_4096 );
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC7919_FFDHE2048 );
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC7919_FFDHE3072 );
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC7919_FFDHE4096 );
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC7919_FFDHE6144 );
+        ADDGROUP( 1, MBEDTLS_GROUP_FAMILY_FFDHE, MBEDTLS_DHM_RFC7919_FFDHE8192 );
+
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP192R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP224R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP256R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP384R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP521R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_BP256R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_BP384R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_BP512R1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_CURVE25519 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP192K1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP224K1 );
+        ADDGROUP( 0, MBEDTLS_GROUP_FAMILY_ECDHE, MBEDTLS_ECP_DP_SECP256K1 );
+
+#define HACL_X25519 "        HACL-X25519"
+        groups[num_groups].family = MBEDTLS_GROUP_FAMILY_X25519;
+        group_names[num_groups] = malloc( strlen( HACL_X25519 ) + 1 );
+        strcpy( group_names[num_groups], HACL_X25519 );
+        num_groups++;
+
+        {
+            #define BUFLEN 4096
+            mbedtls_pk_context srv_ctx, cli_ctx;
+            mbedtls_kex_context *cli_kctx;
+            unsigned char srv_buf[BUFLEN], public_buf[BUFLEN];
+            size_t srv_olen, cli_olen;
+
+            mbedtls_pk_init( &srv_ctx );
+            mbedtls_pk_init( &cli_ctx );
+            if( ( ret = mbedtls_pk_setup( &srv_ctx, &mbedtls_kex_info ) ) ||
+                ( ret = mbedtls_pk_setup( &cli_ctx, &mbedtls_kex_info ) ) )
+                mbedtls_exit( 1 );
+
+            for( i = 0; i < num_groups; i++ ) {
+                mbedtls_group *group = &groups[i];
+                mbedtls_snprintf( title, sizeof( title ), "Key exchange (%s)", &group_names[i][8] );
+                TIME_PUBLIC( title, "kex", {
+                    mbedtls_pk_kex_setup( &srv_ctx, group->family, group );
+                    mbedtls_pk_kex_setup( &cli_ctx, group->family, group );
+                    cli_kctx = mbedtls_pk_key_exchange( &cli_ctx );
+                    cli_kctx->read_params_buf = mbedtls_calloc( BUFLEN, 1 );
+                    cli_kctx->read_params_end = cli_kctx->read_params_buf + BUFLEN;
+                    if( ret == 0 ) ret = mbedtls_pk_kex_initiate( &srv_ctx, group, cli_kctx->read_params_buf, BUFLEN, &srv_olen, myrand, NULL, MBEDTLS_KEX_NON_MULTIPLEXED );
+                    if( ret == 0 ) ret = mbedtls_pk_kex_respond( &cli_ctx, group->family, public_buf, sizeof( public_buf ), &cli_olen, 0, 0, 0, myrand, NULL, MBEDTLS_KEX_NON_MULTIPLEXED );
+                    if( ret == 0 ) ret = mbedtls_pk_kex_read_public( &srv_ctx, public_buf, cli_olen, srv_buf, sizeof( srv_buf ), &srv_olen, myrand, NULL );
+                    if( ret != 0 ) mbedtls_exit( 1 );
+                } );
+            }
+        }
+    }
+#endif /* MBEDTLS_PK_KEX_SUPPORT */
 
     mbedtls_printf( "\n" );
 

@@ -2878,7 +2878,8 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                                             mbedtls_ssl_group_family( ciphersuite_info->key_exchange ),
                                             &ssl->out_msg[i], out_msg_len, &n,
                                             ssl->handshake->premaster, MBEDTLS_PREMASTER_SIZE, &ssl->handshake->pmslen,
-                                            ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
+                                            ssl->conf->f_rng, ssl->conf->p_rng,
+                                            MBEDTLS_KEX_MULTIPLEXED ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_respond", ret );
             return ret;
@@ -3034,13 +3035,16 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
             if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_DHE_PSK )
                 i += 2;
 
-            // CMW: First half of *_kex_respond; mbedtls_ssl_psk_derive_premaster does the second part.
-            // Should be combined into on *_kex_respond?
+            /*
+             * CMW: First half of mbedtls_pk_kex_respond; mbedtls_ssl_psk_derive_premaster does the second part.
+             * Should be combined into on *_kex_respond?
+             */
             if( ( ret = mbedtls_pk_kex_respond( &ssl->handshake->pk_ctx,
                                                 mbedtls_ssl_group_family( ciphersuite_info->key_exchange ),
                                                 &ssl->out_msg[i], MBEDTLS_SSL_MAX_CONTENT_LEN - i, &n,
                                                 0, 0, 0,
-                                                ssl->conf->f_rng, ssl->conf->p_rng ) != 0 ) )
+                                                ssl->conf->f_rng, ssl->conf->p_rng,
+                                                MBEDTLS_KEX_MULTIPLEXED ) != 0 ) )
             {
                 MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_kex_respond", ret );
                 return( ret );

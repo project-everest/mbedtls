@@ -438,17 +438,25 @@ void mbedtls_pk_kex_setup( mbedtls_pk_context *ctx, mbedtls_group_family family,
 int mbedtls_pk_kex_initiate( mbedtls_pk_context *ctx, mbedtls_group *group,
                 unsigned char *buf, size_t blen, size_t *olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
-                void *p_rng)
+                void *p_rng,
+                mbedtls_multiplex multiplex )
 {
     int ret = 0;
     mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
 
-    if( ctx == NULL || ctx->pk_info == NULL ||
+    if( ctx == NULL || ctx->pk_info == NULL || kex_ctx == NULL ||
         group == NULL || blen == 0 ||
         group->family == MBEDTLS_GROUP_FAMILY_NONE )
         return(MBEDTLS_ERR_PK_BAD_INPUT_DATA);
 
     mbedtls_pk_kex_setup( ctx, group->family, group );
+
+    if( multiplex == MBEDTLS_KEX_MULTIPLEXED && group &&
+        group->family == MBEDTLS_GROUP_FAMILY_ECDHE &&
+        group->data.ecdhe.id == MBEDTLS_ECP_DP_CURVE25519 )
+    {
+        group->family = MBEDTLS_GROUP_FAMILY_X25519;
+    }
 
     switch( group->family ) {
     case MBEDTLS_GROUP_FAMILY_ECDHE:
@@ -501,7 +509,7 @@ int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
         mbedtls_ecdh_context *ecdh_ctx = kex_ctx->ctx.ecdhe;
         if( ret == 0 ) ret = mbedtls_ecdh_read_public( ecdh_ctx, inbuf, inbuflen );
         if( ret == 0 ) ret = mbedtls_ecdh_calc_secret( ecdh_ctx, olen, outbuf, outbuflen, f_rng, p_rng );
-        /* TODO: *_calc_secret saves a TLS-specific serialization of the shared
+        /* CMW: *_calc_secret saves a TLS-specific serialization of the shared
             secret in the context. Replace with proper, TLS-indepdentent datatype
             for key shares? */
         break;
@@ -509,7 +517,8 @@ int mbedtls_pk_kex_read_public( const mbedtls_pk_context *ctx,
     case MBEDTLS_GROUP_FAMILY_FFDHE:
     {
         mbedtls_dhm_context *dhm_ctx = kex_ctx->ctx.ffdhe;
-        if( ret == 0 ) ret = mbedtls_dhm_read_public( dhm_ctx, inbuf, inbuflen );
+        size_t ilen = inbuflen;
+        if( ret == 0 ) ret = mbedtls_dhm_read_public( dhm_ctx, inbuf, ilen );
         if( ret == 0 ) ret = mbedtls_dhm_calc_secret( dhm_ctx, outbuf, outbuflen, olen, f_rng, p_rng );
         break;
     }
@@ -531,7 +540,8 @@ int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family
                 unsigned char *public_buf, size_t public_buflen, size_t *public_olen,
                 unsigned char *secret_buf, size_t secret_buflen, size_t *secret_olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
-                void *p_rng )
+                void *p_rng,
+                mbedtls_multiplex multiplex )
 {
     int ret = 0;
     mbedtls_kex_context *kex_ctx = mbedtls_pk_key_exchange( ctx );
@@ -540,7 +550,8 @@ int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family
     if( ctx == NULL || ctx->pk_info == NULL || kex_ctx == NULL )
         return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    if( family == MBEDTLS_GROUP_FAMILY_ECDHE && kex_ctx->read_params_buf )
+    if( multiplex == MBEDTLS_KEX_MULTIPLEXED &&
+        family == MBEDTLS_GROUP_FAMILY_ECDHE && kex_ctx->read_params_buf )
     {
         const mbedtls_ecp_curve_info *curve_info;
         const unsigned char *cp = p;
@@ -564,10 +575,10 @@ int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family
         ecdh_ctx = kex_ctx->ctx.ecdhe;
         if( ret == 0 && kex_ctx->read_params_buf != NULL )
         {
-            const unsigned char **rp = ( const unsigned char ** )&p;
+            const unsigned char *cp = p;
+            const unsigned char **rp = ( const unsigned char ** )&cp;
             ret = mbedtls_ecdh_read_params( ecdh_ctx, rp, kex_ctx->read_params_end );
-            kex_ctx->group->family = kex_ctx->group->family;
-            kex_ctx->group->data.ecdhe = ecdh_ctx->grp;
+            if (ret == 0) kex_ctx->group->data.ecdhe = ecdh_ctx->grp;
         }
         if( ret == 0 && public_buflen > 0 ) ret = mbedtls_ecdh_make_public( ecdh_ctx, public_olen, public_buf, public_buflen, f_rng, p_rng );
         if( ret == 0 && secret_buflen > 0 ) ret = mbedtls_ecdh_calc_secret( ecdh_ctx, secret_olen, secret_buf, secret_buflen, f_rng, p_rng );
@@ -580,14 +591,18 @@ int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family
         dhm_ctx = kex_ctx->ctx.ffdhe;
         if( ret == 0 && kex_ctx->read_params_buf != NULL )
         {
-            ret = mbedtls_dhm_read_params( dhm_ctx, &p, kex_ctx->read_params_end );
-            kex_ctx->group->data.ffdhe.id = MBEDTLS_DHM_OTHER;
-            mbedtls_mpi_copy( &kex_ctx->group->data.ffdhe.P, &dhm_ctx->P );
-            mbedtls_mpi_copy( &kex_ctx->group->data.ffdhe.G, &dhm_ctx->G );
+            const unsigned char *cp = p;
+            unsigned char **rp = ( unsigned char ** )&cp;
+            ret = mbedtls_dhm_read_params( dhm_ctx, rp, kex_ctx->read_params_end );
+            if( ret == 0 ) {
+                kex_ctx->group->data.ffdhe.id = MBEDTLS_DHM_OTHER;
+                mbedtls_mpi_copy( &kex_ctx->group->data.ffdhe.P, &dhm_ctx->P );
+                mbedtls_mpi_copy( &kex_ctx->group->data.ffdhe.G, &dhm_ctx->G );
+            }
         }
         if( public_olen ) *public_olen = dhm_ctx->len;
         if( ret == 0 && public_buflen > 0 ) ret = mbedtls_dhm_make_public( dhm_ctx, dhm_ctx->len, public_buf, dhm_ctx->len, f_rng, p_rng );
-        if( ret == 0 && secret_buflen > 0) ret = mbedtls_dhm_calc_secret( dhm_ctx, secret_buf, dhm_ctx->len, secret_olen, f_rng, p_rng );
+        if( ret == 0 && secret_buflen > 0 ) ret = mbedtls_dhm_calc_secret( dhm_ctx, secret_buf, dhm_ctx->len, secret_olen, f_rng, p_rng );
         break;
         }
     case MBEDTLS_GROUP_FAMILY_X25519:
@@ -599,7 +614,7 @@ int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family
             mbedtls_pk_kex_setup( ctx, family, kex_ctx->group );
         x25519_ctx = kex_ctx->ctx.x25519;
         if( ret == 0 && kex_ctx->read_params_buf != NULL ) ret = mbedtls_x25519_read_params( x25519_ctx, rp, kex_ctx->read_params_end );
-        if( ret == 0 && public_buflen > 0) ret = mbedtls_x25519_make_public( x25519_ctx, public_olen, public_buf, public_buflen, f_rng, p_rng );
+        if( ret == 0 && public_buflen > 0 ) ret = mbedtls_x25519_make_public( x25519_ctx, public_olen, public_buf, public_buflen, f_rng, p_rng );
         if( ret == 0 && secret_buflen > 0 ) ret = mbedtls_x25519_calc_secret( x25519_ctx, secret_olen, secret_buf, secret_buflen, f_rng, p_rng );
         break;
     }
@@ -608,9 +623,9 @@ int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family
     }
 
     if( kex_ctx->read_params_buf )
-        free( kex_ctx->read_params_buf );
-    kex_ctx->read_params_buf = 0;
-    kex_ctx->read_params_end = 0;
+        mbedtls_free( kex_ctx->read_params_buf );
+    kex_ctx->read_params_buf = NULL;
+    kex_ctx->read_params_end = NULL;
     return( ret );
 }
 

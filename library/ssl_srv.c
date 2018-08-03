@@ -2823,8 +2823,8 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
     }
 
 #if defined(MBEDTLS_PK_KEX_SUPPORT)
-    ( ( void )ecdh_ctx );
-    mbedtls_pk_kex_setup( &ssl->handshake->pk_ctx, MBEDTLS_GROUP_FAMILY_ECDHE, 0 );
+    if( ecdh_ctx == NULL )
+        mbedtls_pk_kex_setup( &ssl->handshake->pk_ctx, MBEDTLS_GROUP_FAMILY_ECDHE, 0 );
 
     if( ( ret = mbedtls_pk_kex_get_params( &ssl->handshake->pk_ctx,
                                             mbedtls_pk_ec( *mbedtls_ssl_own_key( ssl ) ),
@@ -2996,7 +2996,8 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
                                             ssl->out_msg + ssl->out_msglen,
                                             MBEDTLS_SSL_MAX_CONTENT_LEN - ssl->out_msglen,
                                             &len,
-                                            ssl->conf->f_rng, ssl->conf->p_rng )) != 0 )
+                                            ssl->conf->f_rng, ssl->conf->p_rng,
+                                            MBEDTLS_KEX_MULTIPLEXED )) != 0 )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ("mbedtls_pk_kex_initiate") );
             return ret;
@@ -3874,8 +3875,8 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
         mbedtls_ecdh_context *ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
 
         if( ( ret = mbedtls_ecdh_read_public( ecdh_ctx,
-        // FIXME(adl) this is strange, unlike read_initiator, there is no side
-        // effect on p? It looks like mbed ignores leftover bytes silently, check with ARM
+        /* FIXME(adl) this is strange, unlike read_initiator, there is no side
+         * effect on p? It looks like mbed ignores leftover bytes silently, check with ARM */
                                       p, end - p) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_read_public", ret );
@@ -4065,8 +4066,8 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 
         ecdh_ctx = mbedtls_ssl_get_ecdh_ctx( ssl );
 
+        /* FIXME(adl) same problem as above, can p have leftover bytes? */
         if( ( ret = mbedtls_ecdh_read_public( ecdh_ctx,
-        // FIXME(adl) same problem as above, can p have leftover bytes?
                                        p, end - p ) ) != 0 )
         {
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ecdh_read_public", ret );

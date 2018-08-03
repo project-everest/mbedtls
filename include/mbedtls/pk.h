@@ -668,6 +668,11 @@ typedef struct
 }
 mbedtls_key_share;
 
+typedef enum {
+    MBEDTLS_KEX_MULTIPLEXED,
+    MBEDTLS_KEX_NON_MULTIPLEXED
+}
+mbedtls_multiplex;
 
 /**
  * Quick access to a key exchange context inside a PK context.
@@ -700,7 +705,8 @@ void mbedtls_pk_kex_setup( mbedtls_pk_context *ctx, mbedtls_group_family family,
 int mbedtls_pk_kex_initiate( mbedtls_pk_context *ctx, mbedtls_group *group,
                 unsigned char *buf, size_t blen, size_t *olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
-                void *p_rng);
+                void *p_rng,
+                mbedtls_multiplex multiplex );
 
 /**
  * \brief
@@ -727,7 +733,8 @@ int mbedtls_pk_kex_respond( mbedtls_pk_context *ctx, mbedtls_group_family family
                 unsigned char *public_buf, size_t public_buflen, size_t *public_olen,
                 unsigned char *secret_buf, size_t secret_buflen, size_t *secret_olen,
                 int (*f_rng)(void *, unsigned char *, size_t),
-                void *p_rng );
+                void *p_rng,
+                mbedtls_multiplex multiplex );
 
 /**
  * \brief
