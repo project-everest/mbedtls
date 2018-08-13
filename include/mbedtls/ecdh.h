@@ -69,6 +69,31 @@ typedef enum
 #if !defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
 /**
  * Defines the ECDH implementation used.
+ */
+typedef enum
+{
+    MBEDTLS_ECDH_VARIANT_NONE = 0, /*!< Implementation not defined. */
+    MBEDTLS_ECDH_VARIANT_MBED,     /*!< The default Mbed TLS implementation */
+} mbedtls_ecdh_variant;
+
+/**
+ * The context used by the default ECDH implementation.
+ */
+typedef struct
+{
+    mbedtls_ecp_group grp;   /*!< The elliptic curve used. */
+    mbedtls_mpi d;           /*!< The private key. */
+    mbedtls_ecp_point Q;     /*!< The public key. */
+    mbedtls_ecp_point Qp;    /*!< The value of the public key of the peer. */
+    mbedtls_mpi z;           /*!< The shared secret. */
+    mbedtls_ecp_point Vi;    /*!< The blinding value. */
+    mbedtls_ecp_point Vf;    /*!< The unblinding value. */
+    mbedtls_mpi _d;          /*!< The previous \p d. */
+} mbedtls_ecdh_context_mbed;
+#endif
+
+/**
+ * Defines the ECDH implementation used.
  *
  * Later versions of the library may add new variants, therefore users should
  * not make any assumptions about them.
@@ -121,32 +146,15 @@ typedef struct mbedtls_ecdh_context
     mbedtls_ecp_point Vi;    /*!< The blinding value. */
     mbedtls_ecp_point Vf;    /*!< The unblinding value. */
     mbedtls_mpi _d;          /*!< The previous \p d. */
-#if defined(MBEDTLS_ECP_RESTARTABLE)
-    int restart_enabled;        /*!< The flag for restartable mode. */
-    mbedtls_ecp_restart_ctx rs; /*!< The restart context for EC computations. */
-#endif /* MBEDTLS_ECP_RESTARTABLE */
 #else
-    uint8_t point_format;       /*!< The format of point export in TLS messages
-                                  as defined in RFC 4492. */
-    mbedtls_ecp_group_id grp_id;/*!< The elliptic curve used. */
-    mbedtls_ecdh_variant var;   /*!< The ECDH implementation/structure used. */
+    int point_format;        /*!< The format of point export in TLS messages. */
+    mbedtls_ecp_group_id grp;/*!< The elliptic curve used. */
+    mbedtls_ecdh_variant var;/*!< The ECDH implementation/structure used. */
     union
     {
-        mbedtls_ecdh_context_mbed   mbed_ecdh;
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        mbedtls_ecdh_context_everest everest_ecdh;
+        mbedtls_ecdh_context_mbed   *mbed_ecdh;
+    } ctx;                   /*!< Implementation specific context. */
 #endif
-    } ctx;                      /*!< Implementation-specific context. The
-                                  context in use is specified by the \c var
-                                  field. */
-#if defined(MBEDTLS_ECP_RESTARTABLE)
-    uint8_t restart_enabled;    /*!< The flag for restartable mode. Functions of
-                                  an alternative implementation not supporting
-                                  restartable mode must return
-                                  MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED error
-                                  if this flag is set. */
-#endif /* MBEDTLS_ECP_RESTARTABLE */
-#endif /* MBEDTLS_ECDH_LEGACY_CONTEXT */
 }
 mbedtls_ecdh_context;
 
