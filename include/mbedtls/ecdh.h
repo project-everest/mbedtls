@@ -36,22 +36,8 @@
 
 #include "ecp.h"
 
-/*
- * Use a backward compatible ECDH context.
- *
- * This flag is always enabled for now and future versions might add a
- * configuration option that conditionally undefines this flag.
- * The configuration option in question may have a different name.
- *
- * Features undefining this flag, must have a warning in their description in
- * config.h stating that the feature breaks backward compatibility.
- */
-#define MBEDTLS_ECDH_LEGACY_CONTEXT
-
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-#undef MBEDTLS_ECDH_LEGACY_CONTEXT
-#include "everest/everest.h"
-#endif
+#define MBEDTLS_ERR_ECDH_BAD_INPUT_DATA         -0x001B  /**< Feature not available. For example, variant or group is not available. */
+#define MBEDTLS_ERR_ECDH_ALLOC_FAILED           -0x001D  /**< Failed to allocate memory. */
 
 #ifdef __cplusplus
 extern "C" {
