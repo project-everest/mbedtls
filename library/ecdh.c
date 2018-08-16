@@ -179,23 +179,16 @@ static int ecdh_setup_internal( mbedtls_ecdh_context_mbed *ctx,
     return( 0 );
 }
 
-/*
- * Setup context
- */
-int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp )
+static int mbedtls_ecdh_setup_internal( mbedtls_ecdh_context *ctx,
+                                        mbedtls_ecp_group_id grp )
 {
     int ret;
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecdh_context *real_ctx;
-
-    if( ctx == NULL )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-    real_ctx = ctx;
+    mbedtls_ecdh_context *real_ctx = ctx;
 #else
     mbedtls_ecdh_context_mbed *real_ctx;
 
-    if( ctx == NULL || ctx->ctx.mbed_ecdh != NULL )
+    if( ctx->ctx.mbed_ecdh != NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     ctx->ctx.mbed_ecdh = (mbedtls_ecdh_context_mbed*) mbedtls_calloc ( 1,
@@ -221,46 +214,38 @@ int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp )
 }
 
 /*
- * Free context
+ * Setup context
  */
-int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp_id )
+int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp )
 {
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecdh_context *real_ctx;
-
     if( ctx == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    return( ecdh_setup_internal( ctx, grp_id ) );
+    return( mbedtls_ecdh_setup_internal( ctx, grp ) );
 #else
-    switch( grp_id )
+    switch( grp )
     {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECP_DP_CURVE25519:
-            ctx->point_format = MBEDTLS_ECP_PF_COMPRESSED;
-            ctx->var = MBEDTLS_ECDH_VARIANT_EVEREST;
-            ctx->grp_id = grp_id;
-            return( mbedtls_everest_setup( &ctx->ctx.everest_ecdh, grp_id ) );
-#endif
         default:
-            ctx->point_format = MBEDTLS_ECP_PF_UNCOMPRESSED;
-            ctx->var = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
-            ctx->grp_id = grp_id;
-            ecdh_init_internal( &ctx->ctx.mbed_ecdh );
-            return( ecdh_setup_internal( &ctx->ctx.mbed_ecdh, grp_id ) );
+            return( mbedtls_ecdh_setup_internal( ctx, grp ) );
     }
 #endif
 }
 
-    real_ctx = ctx;
+static void mbedtls_ecdh_free_internal( mbedtls_ecdh_context *ctx )
+{
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    mbedtls_ecdh_context *real_ctx = ctx;
 #else
     mbedtls_ecdh_context_mbed *real_ctx;
 
-    if( ctx == NULL || ctx->ctx.mbed_ecdh == NULL )
+    if( ctx->ctx.mbed_ecdh == NULL )
         return;
 
     real_ctx = ctx->ctx.mbed_ecdh;
+
+    ctx->var = MBEDTLS_ECDH_VARIANT_NONE;
+    ctx->grp = MBEDTLS_ECP_DP_NONE;
 #endif
 
     mbedtls_ecp_group_free( &real_ctx->grp );
@@ -275,18 +260,6 @@ int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp_id )
 
 #if defined(MBEDTLS_ECP_RESTARTABLE)
 /*
- * Enable restartable operations for context
- */
-void mbedtls_ecdh_enable_restart( mbedtls_ecdh_context *ctx )
-{
-    if( ctx == NULL )
-        return;
-
-    ctx->restart_enabled = 1;
-}
-#endif
-
-/*
  * Free context
  */
 void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
@@ -295,53 +268,35 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
         return;
 
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecp_point_free( &ctx->Vi );
-    mbedtls_ecp_point_free( &ctx->Vf );
-    mbedtls_mpi_free( &ctx->_d );
-    ecdh_free_internal( ctx );
+    mbedtls_ecdh_free_internal( ctx );
 #else
     switch( ctx->var )
     {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECDH_VARIANT_EVEREST:
-            mbedtls_everest_free( &ctx->ctx.everest_ecdh );
-            break;
-#endif
-        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
-            ecdh_free_internal( &ctx->ctx.mbed_ecdh );
+        case MBEDTLS_ECDH_VARIANT_MBED:
+            mbedtls_ecdh_free_internal( ctx );
             break;
         default:
             break;
     }
-
-    ctx->point_format = MBEDTLS_ECP_PF_UNCOMPRESSED;
-    ctx->var = MBEDTLS_ECDH_VARIANT_NONE;
-    ctx->grp_id = MBEDTLS_ECP_DP_NONE;
 #endif
 }
 
-static int ecdh_make_params_internal( mbedtls_ecdh_context_mbed *ctx,
-                                      size_t *olen, int point_format,
-                                      unsigned char *buf, size_t blen,
-                                      int (*f_rng)(void *,
-                                                   unsigned char *,
-                                                   size_t),
-                                      void *p_rng,
-                                      int restart_enabled )
+static int mbedtls_ecdh_make_params_internal( mbedtls_ecdh_context *ctx,
+                                              size_t *olen,
+                                              unsigned char *buf, size_t blen,
+                                              int (*f_rng)(void *,
+                                                           unsigned char *,
+                                                           size_t),
+                                              void *p_rng )
 {
     int ret;
     size_t grp_len, pt_len;
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecdh_context *real_ctx;
-
-    if( ctx == NULL )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-    real_ctx = ctx;
+    mbedtls_ecdh_context *real_ctx = ctx;
 #else
     mbedtls_ecdh_context_mbed *real_ctx;
 
-    if( ctx == NULL || ctx->ctx.mbed_ecdh == NULL )
+    if( ctx->ctx.mbed_ecdh == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     real_ctx = ctx->ctx.mbed_ecdh;
@@ -376,7 +331,7 @@ static int ecdh_make_params_internal( mbedtls_ecdh_context_mbed *ctx,
 }
 
 /*
- * Setup and write the ServerKeyExchange parameters (RFC 4492)
+ * Setup and write the ServerKeyExhange parameters (RFC 4492)
  *      struct {
  *          ECParameters    curve_params;
  *          ECPoint         public;
@@ -387,44 +342,35 @@ int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
                               int (*f_rng)(void *, unsigned char *, size_t),
                               void *p_rng )
 {
-    int restart_enabled = 0;
-
     if( ctx == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-#if defined(MBEDTLS_ECP_RESTARTABLE)
-    restart_enabled = ctx->restart_enabled;
-#else
-    (void) restart_enabled;
-#endif
-
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    return( ecdh_make_params_internal( ctx, olen, ctx->point_format, buf, blen,
-                                       f_rng, p_rng, restart_enabled ) );
+    return( mbedtls_ecdh_make_params_internal( ctx, olen, buf, blen, f_rng,
+                                               p_rng ) );
 #else
     switch( ctx->var )
     {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECDH_VARIANT_EVEREST:
-            return( mbedtls_everest_make_params( &ctx->ctx.everest_ecdh, olen,
-                                                 buf, blen, f_rng, p_rng ) );
-#endif
-        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
-            return( ecdh_make_params_internal( &ctx->ctx.mbed_ecdh, olen,
-                                               ctx->point_format, buf, blen,
-                                               f_rng, p_rng,
-                                               restart_enabled ) );
+        case MBEDTLS_ECDH_VARIANT_MBED:
+            return( mbedtls_ecdh_make_params_internal( ctx, olen, buf, blen,
+                                                       f_rng, p_rng ) );
         default:
-            return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+            return MBEDTLS_ERR_ECDH_BAD_INPUT_DATA;
     }
 #endif
 }
 
-static int ecdh_read_params_internal( mbedtls_ecdh_context_mbed *ctx,
-                                      const unsigned char **buf,
-                                      const unsigned char *end )
+static int mbedtls_ecdh_read_params_internal( mbedtls_ecdh_context *ctx,
+                                              const unsigned char **buf,
+                                              const unsigned char *end )
 {
-    return( mbedtls_ecp_tls_read_point( &ctx->grp, &ctx->Qp, buf,
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    mbedtls_ecdh_context *real_ctx = ctx;
+#else
+    mbedtls_ecdh_context_mbed *real_ctx = ctx->ctx.mbed_ecdh;
+#endif
+
+    return( mbedtls_ecp_tls_read_point( &real_ctx->grp, &real_ctx->Qp, buf,
                                         end - *buf ) );
 }
 
@@ -441,21 +387,9 @@ int mbedtls_ecdh_read_params( mbedtls_ecdh_context *ctx,
 {
     int ret;
     mbedtls_ecp_group_id grp_id;
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecdh_context *real_ctx;
 
     if( ctx == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-    real_ctx = ctx;
-#else
-    mbedtls_ecdh_context_mbed *real_ctx;
-
-    if( ctx == NULL || ctx->ctx.mbed_ecdh != NULL )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-    real_ctx = ctx->ctx.mbed_ecdh;
-#endif
 
     if( ( ret = mbedtls_ecp_tls_read_group_id( &grp_id, buf, end - *buf ) )
             != 0 )
@@ -464,55 +398,28 @@ int mbedtls_ecdh_read_params( mbedtls_ecdh_context *ctx,
     if( ( ret = mbedtls_ecdh_setup( ctx, grp_id ) ) != 0 )
         return( ret );
 
-#if !defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    real_ctx = ctx->ctx.mbed_ecdh;
-#endif
-
-    if( ( ret = mbedtls_ecp_tls_read_point( &real_ctx->grp, &real_ctx->Qp, buf,
-                                            end - *buf ) ) != 0 )
-        return( ret );
-
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    return( ecdh_read_params_internal( ctx, buf, end ) );
+    return( mbedtls_ecdh_read_params_internal( ctx, buf, end ) );
 #else
     switch( ctx->var )
     {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECDH_VARIANT_EVEREST:
-            return( mbedtls_everest_read_params( &ctx->ctx.everest_ecdh,
-                                                 buf, end) );
-#endif
-        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
-            return( ecdh_read_params_internal( &ctx->ctx.mbed_ecdh,
-                                               buf, end ) );
+        case MBEDTLS_ECDH_VARIANT_MBED:
+            return( mbedtls_ecdh_read_params_internal( ctx, buf, end ) );
         default:
-            return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+            return MBEDTLS_ERR_ECDH_BAD_INPUT_DATA;
     }
 #endif
 }
 
-static int ecdh_get_params_internal( mbedtls_ecdh_context_mbed *ctx,
-                                     const mbedtls_ecp_keypair *key,
-                                     mbedtls_ecdh_side side )
+static int mbedtls_ecdh_get_params_internal( mbedtls_ecdh_context *ctx,
+                                             const mbedtls_ecp_keypair *key,
+                                             mbedtls_ecdh_side side )
 {
     int ret;
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
     mbedtls_ecdh_context *real_ctx = ctx;
-
-    if( ctx == NULL )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 #else
-    mbedtls_ecdh_context_mbed *real_ctx;
-
-    if( ctx == NULL || ctx->ctx.mbed_ecdh != NULL )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-#endif
-
-    if( ( ret = mbedtls_ecdh_setup( ctx, key->grp.id ) ) != 0 )
-        return( ret );
-
-#if !defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    real_ctx = ctx->ctx.mbed_ecdh;
+    mbedtls_ecdh_context_mbed *real_ctx = ctx->ctx.mbed_ecdh;
 #endif
 
     /* If it's not our key, just import the public part as Qp */
@@ -538,17 +445,41 @@ int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx,
                              mbedtls_ecdh_side side )
 {
     int ret;
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecdh_context *real_ctx;
 
     if( ctx == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    real_ctx = ctx;
+    if( ( ret = mbedtls_ecdh_setup( ctx, key->grp.id ) ) != 0 )
+        return( ret );
+
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    return( mbedtls_ecdh_get_params_internal( ctx, key, side ) );
+#else
+    switch( ctx->var )
+    {
+        case MBEDTLS_ECDH_VARIANT_MBED:
+            return( mbedtls_ecdh_get_params_internal( ctx, key, side ) );
+        default:
+            return MBEDTLS_ERR_ECDH_BAD_INPUT_DATA;
+    }
+#endif
+}
+
+static int mbedtls_ecdh_make_public_internal( mbedtls_ecdh_context *ctx,
+                                              size_t *olen, unsigned char *buf,
+                                              size_t blen,
+                                              int (*f_rng)(void *,
+                                                           unsigned char *,
+                                                           size_t),
+                                              void *p_rng )
+{
+    int ret;
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    mbedtls_ecdh_context *real_ctx = ctx;
 #else
     mbedtls_ecdh_context_mbed *real_ctx;
 
-    if( ctx == NULL || ctx->ctx.mbed_ecdh == NULL )
+    if( ctx->ctx.mbed_ecdh == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     real_ctx = ctx->ctx.mbed_ecdh;
@@ -578,19 +509,36 @@ int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
                               int (*f_rng)(void *, unsigned char *, size_t),
                               void *p_rng )
 {
-    int ret;
-    const unsigned char *p = buf;
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecdh_context *real_ctx;
-
     if( ctx == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    real_ctx = ctx;
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    return( mbedtls_ecdh_make_public_internal( ctx, olen, buf, blen, f_rng,
+                                               p_rng ) );
+#else
+    switch( ctx->var )
+    {
+        case MBEDTLS_ECDH_VARIANT_MBED:
+            return( mbedtls_ecdh_make_public_internal( ctx, olen, buf, blen,
+                                                       f_rng, p_rng ) );
+        default:
+            return MBEDTLS_ERR_ECDH_BAD_INPUT_DATA;
+    }
+#endif
+}
+
+static int mbedtls_ecdh_read_public_internal( mbedtls_ecdh_context *ctx,
+                                              const unsigned char *buf,
+                                              size_t blen )
+{
+    int ret;
+    const unsigned char *p = buf;
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    mbedtls_ecdh_context *real_ctx = ctx;
 #else
     mbedtls_ecdh_context_mbed *real_ctx;
 
-    if( ctx == NULL || ctx->ctx.mbed_ecdh == NULL )
+    if( ctx->ctx.mbed_ecdh == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     real_ctx = ctx->ctx.mbed_ecdh;
@@ -616,52 +564,37 @@ int mbedtls_ecdh_read_public( mbedtls_ecdh_context *ctx,
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    return( ecdh_read_public_internal( ctx, buf, blen ) );
+    return( mbedtls_ecdh_read_public_internal( ctx, buf, blen ) );
 #else
     switch( ctx->var )
     {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECDH_VARIANT_EVEREST:
-            return( mbedtls_everest_read_public( &ctx->ctx.everest_ecdh,
-                                                 buf, blen ) );
-#endif
-        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
-            return( ecdh_read_public_internal( &ctx->ctx.mbed_ecdh,
-                                                       buf, blen ) );
+        case MBEDTLS_ECDH_VARIANT_MBED:
+            return( mbedtls_ecdh_read_public_internal( ctx, buf, blen ) );
         default:
-            return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+            return MBEDTLS_ERR_ECDH_BAD_INPUT_DATA;
     }
 #endif
 }
 
-static int ecdh_calc_secret_internal( mbedtls_ecdh_context_mbed *ctx,
-                                      size_t *olen, unsigned char *buf,
-                                      size_t blen,
-                                      int (*f_rng)(void *,
-                                                   unsigned char *,
-                                                   size_t),
-                                      void *p_rng,
-                                      int restart_enabled )
+static int mbedtls_ecdh_calc_secret_internal( mbedtls_ecdh_context *ctx,
+                                              size_t *olen, unsigned char *buf,
+                                              size_t blen,
+                                              int (*f_rng)(void *,
+                                                           unsigned char *,
+                                                           size_t),
+                                              void *p_rng )
 {
     int ret;
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    mbedtls_ecdh_context *real_ctx;
-
-    if( ctx == NULL )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-    real_ctx = ctx;
+    mbedtls_ecdh_context *real_ctx = ctx;
 #else
     mbedtls_ecdh_context_mbed *real_ctx;
 
-    if( ctx == NULL || ctx->ctx.mbed_ecdh == NULL )
+    if( ctx->ctx.mbed_ecdh == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     real_ctx = ctx->ctx.mbed_ecdh;
 #endif
-
-    if( ctx == NULL || ctx->grp.pbits == 0 )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     if( ( ret = mbedtls_ecdh_compute_shared( &real_ctx->grp, &real_ctx->z,
                                              &real_ctx->Qp, &real_ctx->d, f_rng,
@@ -686,32 +619,20 @@ int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
                               int (*f_rng)(void *, unsigned char *, size_t),
                               void *p_rng )
 {
-    int restart_enabled = 0;
-
     if( ctx == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-#if defined(MBEDTLS_ECP_RESTARTABLE)
-    restart_enabled = ctx->restart_enabled;
-#endif
-
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    return( ecdh_calc_secret_internal( ctx, olen, buf, blen, f_rng, p_rng,
-                                       restart_enabled ) );
+    return( mbedtls_ecdh_calc_secret_internal( ctx, olen, buf, blen, f_rng,
+                                               p_rng ) );
 #else
     switch( ctx->var )
     {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECDH_VARIANT_EVEREST:
-            return( mbedtls_everest_calc_secret( &ctx->ctx.everest_ecdh, olen,
-                                                 buf, blen, f_rng, p_rng ) );
-#endif
-        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
-            return( ecdh_calc_secret_internal( &ctx->ctx.mbed_ecdh, olen, buf,
-                                               blen, f_rng, p_rng,
-                                               restart_enabled ) );
+        case MBEDTLS_ECDH_VARIANT_MBED:
+            return( mbedtls_ecdh_calc_secret_internal( ctx, olen, buf, blen,
+                                                       f_rng, p_rng ) );
         default:
-            return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+            return MBEDTLS_ERR_ECDH_BAD_INPUT_DATA;
     }
 #endif
 }
