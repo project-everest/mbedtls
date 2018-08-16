@@ -214,22 +214,14 @@ int mbedtls_ecdh_compute_shared( mbedtls_ecp_group *grp, mbedtls_mpi *z,
 void mbedtls_ecdh_init( mbedtls_ecdh_context *ctx );
 
 /**
- * \brief           This function sets up the ECDH context with the information
- *                  given.
- *
- *                  This function should be called after mbedtls_ecdh_init() but
- *                  before mbedtls_ecdh_make_params(). There is no need to call
- *                  this function before mbedtls_ecdh_read_params().
- *
- *                  This is the first function used by a TLS server for ECDHE
- *                  ciphersuites.
+ * \brief           This function sets up the ECDH context.
  *
  * \param ctx       The ECDH context to set up.
- * \param grp_id    The group id of the group to set up the context for.
+ * \param grp       The group id of the group to set up the context for.
  *
  * \return          \c 0 on success.
  */
-int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp_id );
+int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp );
 
 /**
  * \brief           This function frees a context.
