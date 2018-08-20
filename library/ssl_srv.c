@@ -3074,7 +3074,7 @@ curve_matching_done:
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
         MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q", &ssl->handshake->ecdh_ctx.Q );
 #else
-        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBED )
+        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
             MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q",
                                    &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh->Q );
 #endif
@@ -3803,7 +3803,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
         MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp", &ssl->handshake->ecdh_ctx.Qp );
 #else
-        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBED )
+        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
             MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp",
                                    &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh
                                     ->Qp );
@@ -3822,7 +3822,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
     MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z", &ssl->handshake->ecdh_ctx.z );
 #else
-    if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBED )
+    if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
         MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z",
                                &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh->z );
 #endif
@@ -3941,7 +3941,7 @@ static int ssl_parse_client_key_exchange( mbedtls_ssl_context *ssl )
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
         MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp", &ssl->handshake->ecdh_ctx.Qp );
 #else
-        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBED )
+        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
             MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp",
                                    &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh
                                     ->Qp );
