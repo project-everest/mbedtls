@@ -150,6 +150,8 @@ static void ecdh_init_internal( mbedtls_ecdh_context_mbed *ctx )
 void mbedtls_ecdh_init( mbedtls_ecdh_context *ctx )
 {
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    memset( ctx, 0, sizeof( mbedtls_ecdh_context ) );
+
     mbedtls_ecp_group_init( &ctx->grp );
     mbedtls_ecp_point_init( &ctx->Q   );
     mbedtls_ecp_point_init( &ctx->Qp  );
