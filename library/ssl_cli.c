@@ -2051,13 +2051,8 @@ static int ssl_check_server_ecdh_params( const mbedtls_ssl_context *ssl )
 #endif
         return( -1 );
 
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp", &ssl->handshake->ecdh_ctx.Qp );
-#else
-    if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
-        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Qp",
-                               &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh->Qp );
-#endif
+    MBEDTLS_SSL_DEBUG_ECDH( 3, &ssl->handshake->ecdh_ctx,
+                            MBEDTLS_DEBUG_ECDH_QP );
 
     return( 0 );
 }
@@ -2979,13 +2974,8 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
             return( ret );
         }
 
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-        MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q", &ssl->handshake->ecdh_ctx.Q );
-#else
-        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
-            MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q",
-                                   &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh->Q );
-#endif
+        MBEDTLS_SSL_DEBUG_ECDH( 3, &ssl->handshake->ecdh_ctx,
+                                MBEDTLS_DEBUG_ECDH_Q );
 
 ecdh_calc_secret:
         if( ssl->handshake->ecrs_enabled )
@@ -3005,13 +2995,8 @@ ecdh_calc_secret:
             return( ret );
         }
 
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-        MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z", &ssl->handshake->ecdh_ctx.z );
-#else
-        if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
-            MBEDTLS_SSL_DEBUG_MPI( 3, "ECDH: z",
-                                   &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh->z );
-#endif
+        MBEDTLS_SSL_DEBUG_ECDH( 3, &ssl->handshake->ecdh_ctx,
+                                MBEDTLS_DEBUG_ECDH_Z );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -3106,14 +3091,8 @@ ecdh_calc_secret:
                 return( ret );
             }
 
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-            MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q", &ssl->handshake->ecdh_ctx.Q );
-#else
-            if( ssl->handshake->ecdh_ctx.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 )
-                MBEDTLS_SSL_DEBUG_ECP( 3, "ECDH: Q",
-                                       &ssl->handshake->ecdh_ctx.ctx.mbed_ecdh
-                                           ->Q );
-#endif
+            MBEDTLS_SSL_DEBUG_ECDH( 3, &ssl->handshake->ecdh_ctx,
+                                    MBEDTLS_DEBUG_ECDH_Q );
         }
         else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */
