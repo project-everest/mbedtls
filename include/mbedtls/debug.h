@@ -78,7 +78,7 @@
 #define MBEDTLS_SSL_DEBUG_MPI( level, text, X )         do { } while( 0 )
 #define MBEDTLS_SSL_DEBUG_ECP( level, text, X )         do { } while( 0 )
 #define MBEDTLS_SSL_DEBUG_CRT( level, text, crt )       do { } while( 0 )
-#define MBEDTLS_SSL_DEBUG_ECDH( level, ecdh, attr )     do { } while( 0 )
+#define MBEDTLS_SSL_DEBUG_ECDH( level, text, ecdh, attr ) do { } while( 0 )
 
 #endif /* MBEDTLS_DEBUG_C */
 
@@ -246,7 +246,7 @@ typedef enum
  * \param file      file the error has occurred in
  * \param line      line number the error has occurred in
  * \param ecdh      the ECDH context
- * \param attr      the identifier of the attribute being output
+ * \param attr  the identifier of the attribute being output
  *
  * \attention       This function is intended for INTERNAL usage within the
  *                  library only.
