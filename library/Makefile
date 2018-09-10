@@ -18,6 +18,9 @@ endif
 # To compile on Plan9:
 # CFLAGS += -D_BSD_EXTENSION
 
+# Include directories for Everest code
+CFLAGS+=-I../include/everest -I../include/everest/kremlin -I../include/everest/kremlib
+
 # if were running on Windows build for Windows
 ifdef WINDOWS
 WINDOWS_BUILD=1
@@ -84,7 +87,12 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		ripemd160.o	rsa_internal.o	rsa.o  		\
 		sha1.o		sha256.o	sha512.o	\
 		threading.o	timing.o	version.o	\
-		version_features.o		xtea.o
+		version_features.o		xtea.o 
+
+OBJS_CRYPTO+= everest/everest.o \
+		everest/Hacl_Curve25519.o everest/x25519.o \
+		everest/kremlib/FStar_UInt64.o everest/kremlib/c/fstar_uint64.o \
+		everest/kremlib/c/fstar_uint128.o
 
 OBJS_X509=	certs.o		pkcs11.o	x509.o		\
 		x509_create.o	x509_crl.o	x509_crt.o	\
@@ -171,6 +179,7 @@ libmbedx509.dll: $(OBJS_X509) libmbedcrypto.dll
 # crypto
 libmbedcrypto.a: $(OBJS_CRYPTO)
 	echo "  AR    $@"
+	echo $(AR) $(ARFLAGS) $@ $(OBJS_CRYPTO)
 	$(AR) $(ARFLAGS) $@ $(OBJS_CRYPTO)
 ifdef APPLE_BUILD
 ifneq ($(APPLE_BUILD),0)
@@ -197,6 +206,7 @@ libmbedcrypto.dll: $(OBJS_CRYPTO)
 
 .c.o:
 	echo "  CC    $<"
+	echo $(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 
 clean:
@@ -205,3 +215,4 @@ ifndef WINDOWS
 else
 	del /Q /F *.o libmbed* $(OBJS_CRYPTO)
 endif
+

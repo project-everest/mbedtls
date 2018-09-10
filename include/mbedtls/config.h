@@ -3175,6 +3175,15 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
+ /**
+  * \def MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
+  *
+  * Enable the verified implementations of crypto primitives
+  * from Project Everest (currently only x25519).
+  *
+  */
+#define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
+
 #include "check_config.h"
 
 #endif /* MBEDTLS_CONFIG_H */
