@@ -46,7 +46,11 @@
  * Features undefining this flag, must have a warning in their description in
  * config.h stating that the feature breaks backward compatibility.
  */
-#define MBEDTLS_ECDH_LEGACY_CONTEXT
+//#define MBEDTLS_ECDH_LEGACY_CONTEXT
+
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+#include "everest/everest.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +76,9 @@ typedef enum
 {
     MBEDTLS_ECDH_VARIANT_NONE = 0,   /*!< Implementation not defined. */
     MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0,/*!< The default Mbed TLS implementation */
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+    MBEDTLS_ECDH_VARIANT_EVEREST     /*!< Everest implementation */
+#endif
 } mbedtls_ecdh_variant;
 
 /**
@@ -114,6 +121,9 @@ typedef struct mbedtls_ecdh_context
     union
     {
         mbedtls_ecdh_context_mbed   mbed_ecdh;
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        mbedtls_ecdh_context_everest everest_ecdh;
+#endif
     } ctx;                      /*!< Implementation-specific context. The
                                   context in use is specified by the \c var
                                   field. */

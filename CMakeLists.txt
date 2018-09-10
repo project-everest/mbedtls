@@ -149,7 +149,7 @@ else()
     set(LIB_INSTALL_DIR lib)
 endif()
 
-include_directories(include/)
+include_directories(include/ include/everest include/everest/kremlin include/everest/kremlib)
 
 if(ENABLE_ZLIB_SUPPORT)
     find_package(ZLIB)
