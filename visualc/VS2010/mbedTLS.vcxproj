@@ -86,7 +86,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../3rdparty/everest/include/;../../3rdparty/everest/include/everest;../../3rdparty/everest/include/everest/vs2010;../../3rdparty/everest/include/everest/kremlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -101,7 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../3rdparty/everest/include/;../../3rdparty/everest/include/everest;../../3rdparty/everest/include/everest/vs2010;../../3rdparty/everest/include/everest/kremlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -118,7 +118,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../3rdparty/everest/include/;../../3rdparty/everest/include/everest;../../3rdparty/everest/include/everest/vs2010;../../3rdparty/everest/include/everest/kremlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -136,7 +136,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../include;../../3rdparty/everest/include/;../../3rdparty/everest/include/everest;../../3rdparty/everest/include/everest/vs2010;../../3rdparty/everest/include/everest/kremlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,6 +146,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\everest\everest.h" />
+    <ClInclude Include="..\..\include\everest\Hacl_Curve25519.h" />
+    <ClInclude Include="..\..\include\everest\kremlib.h" />
+    <ClInclude Include="..\..\include\everest\x25519.h" />
     <ClInclude Include="..\..\include\mbedtls\aes.h" />
     <ClInclude Include="..\..\include\mbedtls\aesni.h" />
     <ClInclude Include="..\..\include\mbedtls\arc4.h" />
@@ -259,6 +263,11 @@
     <ClCompile Include="..\..\library\entropy.c" />
     <ClCompile Include="..\..\library\entropy_poll.c" />
     <ClCompile Include="..\..\library\error.c" />
+    <ClCompile Include="..\..\library\everest\everest.c" />
+    <ClCompile Include="..\..\library\everest\Hacl_Curve25519.c" />
+    <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt128.c" />
+    <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt64.c" />
+    <ClCompile Include="..\..\library\everest\x25519.c" />
     <ClCompile Include="..\..\library\gcm.c" />
     <ClCompile Include="..\..\library\havege.c" />
     <ClCompile Include="..\..\library\hkdf.c" />
