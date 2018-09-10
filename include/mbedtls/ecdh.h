@@ -43,7 +43,11 @@
  * must contain a warning stating that the feature breaks backward
  * compatibility.
  */
-#define MBEDTLS_ECDH_LEGACY_CONTEXT
+//#define MBEDTLS_ECDH_LEGACY_CONTEXT
+
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+#include "everest/everest.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,6 +73,7 @@ typedef enum
 {
     MBEDTLS_ECDH_VARIANT_NONE = 0,   /*!< Implementation not defined. */
     MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0,/*!< The default Mbed TLS implementation */
+    MBEDTLS_ECDH_VARIANT_EVEREST     /*!< Everest implementation */
 } mbedtls_ecdh_variant;
 
 /**
@@ -108,7 +113,8 @@ typedef struct mbedtls_ecdh_context
     mbedtls_ecdh_variant var;/*!< The ECDH implementation/structure used. */
     union
     {
-        mbedtls_ecdh_context_mbed   mbed_ecdh;
+        mbedtls_ecdh_context_mbed mbed_ecdh;
+        mbedtls_ecdh_context_everest everest_ecdh;
     } ctx;                   /*!< Implementation-specific context. The context
                                   in use is specified by the var field.*/
 #endif
