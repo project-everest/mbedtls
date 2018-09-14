@@ -218,6 +218,3 @@ else
 	del /Q /F *.o libmbed* $(OBJS_CRYPTO)
 endif
 
-
-libmbedtls.a: everest/Hacl_Curve25519.o everest/x25519.o
-CFLAGS+=-I../include/everest
