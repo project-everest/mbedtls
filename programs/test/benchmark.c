@@ -76,6 +76,8 @@ int main( void )
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/ecdh.h"
 
+#include "mbedtls/eddsa.h"
+
 #include "mbedtls/error.h"
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
@@ -104,7 +106,7 @@ int main( void )
     "aes_cbc, aes_gcm, aes_ccm, aes_ctx, chachapoly,\n"                 \
     "aes_cmac, des3_cmac, poly1305\n"                                   \
     "havege, ctr_drbg, hmac_drbg\n"                                     \
-    "rsa, dhm, ecdsa, ecdh.\n"
+    "rsa, dhm, ecdsa, ecdh, eddsa.\n"
 
 #if defined(MBEDTLS_ERROR_C)
 #define PRINT_ERROR                                                     \
@@ -267,7 +269,7 @@ typedef struct {
          aria, camellia, blowfish, chacha20,
          poly1305,
          havege, ctr_drbg, hmac_drbg,
-         rsa, dhm, ecdsa, ecdh;
+         rsa, dhm, ecdsa, ecdh, eddsa;
 } todo_list;
 
 int main( int argc, char *argv[] )
@@ -346,6 +348,8 @@ int main( int argc, char *argv[] )
                 todo.ecdsa = 1;
             else if( strcmp( argv[i], "ecdh" ) == 0 )
                 todo.ecdh = 1;
+            else if( strcmp( argv[i], "eddsa" ) == 0 )
+                todo.eddsa = 1;
             else
             {
                 mbedtls_printf( "Unrecognized option: %s\n", argv[i] );
@@ -1040,6 +1044,97 @@ int main( int argc, char *argv[] )
 
             mbedtls_ecdh_free( &ecdh_srv );
             mbedtls_ecdh_free( &ecdh_cli );
+        }
+    }
+#endif
+
+
+#define TIME_AND_TSC_CNT( TITLE, CNT, CODE )                            \
+do {                                                                    \
+    unsigned long ii, jj, tsc, total = 0;                               \
+    int ret = 0;                                                        \
+                                                                        \
+    mbedtls_printf( HEADER_FORMAT, TITLE );                             \
+    fflush( stdout );                                                   \
+                                                                        \
+    mbedtls_set_alarm( 1 );                                             \
+    for( ii = 1; ret == 0 && ! mbedtls_timing_alarmed; ii++ )           \
+    {                                                                   \
+        ret = CODE;                                                     \
+    }                                                                   \
+                                                                        \
+    tsc = mbedtls_timing_hardclock();                                   \
+    for( jj = 0; ret == 0 && jj < 1024; jj++ )                          \
+    {                                                                   \
+        ret = CODE;                                                     \
+        total += CNT;                                                   \
+    }                                                                   \
+                                                                        \
+    if( ret != 0 )                                                      \
+    {                                                                   \
+        PRINT_ERROR;                                                    \
+    }                                                                   \
+    else                                                                \
+    {                                                                   \
+        mbedtls_printf( "%6lu KiB/s,  %9lu cycles/byte\n",              \
+                      ( total / 1024ul ),                               \
+                      ( mbedtls_timing_hardclock() - tsc ) / total );   \
+    }                                                                   \
+} while( 0 )
+
+#if defined(MBEDTLS_EDDSA_C)
+    if( todo.eddsa )
+    {
+        const mbedtls_ecp_curve_info curve_list[] = {
+#if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+            { MBEDTLS_ECP_DP_CURVE25519, 0x001D, 256, "Curve25519" },
+#endif
+            { MBEDTLS_ECP_DP_NONE, 0, 0, 0 }
+        };
+        const mbedtls_ecp_curve_info *curve_info;
+        mbedtls_eddsa_context eddsa;
+        size_t sig_len;
+
+        //myrand( NULL, buf, sizeof( buf ) );
+        memset( buf, 0x2A, sizeof( buf ) );
+
+        for( curve_info = curve_list;
+            curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
+            curve_info++ )
+        {
+            mbedtls_eddsa_init( &eddsa );
+
+            if( mbedtls_eddsa_genkey( &eddsa, curve_info->grp_id, myrand, NULL ) != 0 )
+                mbedtls_exit( 1 );
+
+            mbedtls_snprintf( title, sizeof( title ), "EdDSA-%s", curve_info->name );
+            TIME_PUBLIC( title, "sign",
+                ret = mbedtls_eddsa_write_signature( &eddsa, buf, sizeof( buf ), tmp, sizeof( tmp ), &sig_len, myrand, NULL )
+            );
+
+            TIME_AND_TSC_CNT( title, sizeof( buf ),
+                mbedtls_eddsa_write_signature( &eddsa, buf, sizeof( buf ), tmp, sizeof( tmp ), &sig_len, myrand, NULL )
+            );
+
+            mbedtls_eddsa_free( &eddsa );
+        }
+
+        for( curve_info = curve_list;
+             curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
+             curve_info++ )
+        {
+            mbedtls_eddsa_init( &eddsa );
+
+            if( mbedtls_eddsa_genkey( &eddsa, curve_info->grp_id, myrand, NULL ) != 0 ||
+                mbedtls_eddsa_write_signature( &eddsa, buf, sizeof( buf ), tmp, sizeof( tmp ), &sig_len, myrand, NULL ) != 0 )
+                mbedtls_exit( 1 );
+
+            mbedtls_snprintf( title, sizeof( title ), "EdDSA-%s", curve_info->name );
+            TIME_PUBLIC( title, "verify",
+                ret = mbedtls_eddsa_read_signature( &eddsa, buf, sizeof( buf ), tmp, sig_len )
+            );
+
+            mbedtls_eddsa_free( &eddsa );
         }
     }
 #endif
