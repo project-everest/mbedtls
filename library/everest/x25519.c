@@ -100,7 +100,7 @@ int mbedtls_x25519_read_params( mbedtls_x25519_context *ctx,
 }
 
 int mbedtls_x25519_get_params( mbedtls_x25519_context *ctx, const mbedtls_ecp_keypair *key,
-                        int side )
+                        mbedtls_ecdh_side side )
 {
     size_t olen = 0;
 
