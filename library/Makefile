@@ -87,10 +87,12 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		ripemd160.o	rsa_internal.o	rsa.o  		\
 		sha1.o		sha256.o	sha512.o	\
 		threading.o	timing.o	version.o	\
-		version_features.o		xtea.o 
+		version_features.o		xtea.o \
+		eddsa.o
 
 OBJS_CRYPTO+= everest/everest.o \
 		everest/Hacl_Curve25519.o everest/x25519.o \
+		everest/Hacl_Ed25519.o  \
 		everest/kremlib/FStar_UInt64.o everest/kremlib/c/fstar_uint64.o \
 		everest/kremlib/c/fstar_uint128.o
 
@@ -212,3 +214,6 @@ else
 	del /Q /F *.o libmbed* $(OBJS_CRYPTO)
 endif
 
+
+libmbedtls.a: everest/Hacl_Curve25519.o everest/x25519.o
+CFLAGS+=-I../include/everest
