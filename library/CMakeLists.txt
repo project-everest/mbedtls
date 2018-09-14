@@ -64,6 +64,14 @@ set(src_crypto
     version.c
     version_features.c
     xtea.c
+    eddsa.c
+    everest/everest.o
+    everest/Hacl_Curve25519.o
+    everest/x25519.o
+    everest/Hacl_Ed25519.o
+    everest/kremlib/FStar_UInt64.o
+    everest/kremlib/c/fstar_uint64.o
+    everest/kremlib/c/fstar_uint128.o
 )
 
 list(APPEND src_crypto ${thirdparty_src})
