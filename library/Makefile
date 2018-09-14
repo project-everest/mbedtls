@@ -209,11 +209,8 @@ libmbedcrypto.dll: $(OBJS_CRYPTO)
 
 clean:
 ifndef WINDOWS
-	rm -f *.o libmbed*
+	rm -f *.o libmbed* $(OBJS_CRYPTO)
 else
 	del /Q /F *.o libmbed* $(OBJS_CRYPTO)
 endif
 
-
-libmbedtls.a: everest/Hacl_Curve25519.o everest/x25519.o
-CFLAGS+=-I../include/everest
