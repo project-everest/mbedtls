@@ -497,7 +497,9 @@ static int ecdsa_verify_restartable( mbedtls_ecp_group *grp,
     mbedtls_mpi_init( &u1 ); mbedtls_mpi_init( &u2 );
 
     /* Fail cleanly on curves such as Curve25519 that can't be used for ECDSA */
-    if( !mbedtls_ecdsa_can_do( grp->id ) || grp->N.p == NULL )
+    if( grp->id == MBEDTLS_ECP_DP_CURVE25519 ||
+        grp->id == MBEDTLS_ECP_DP_CURVE448 ||
+        grp->N.p == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     ECDSA_RS_ENTER( ver );
