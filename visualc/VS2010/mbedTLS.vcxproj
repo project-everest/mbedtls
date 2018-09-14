@@ -88,6 +88,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4554;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,6 +104,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4554;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -119,6 +121,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4554;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -137,6 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;MBEDTLS_EXPORTS;KRML_VERIFIED_UINT128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../include;../../include/everest;../../include/everest/kremlib;../../include/everest/vs2010</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4554;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\everest\everest.h" />
     <ClInclude Include="..\..\include\everest\Hacl_Curve25519.h" />
+    <ClInclude Include="..\..\include\everest\Hacl_Ed25519.h" />
     <ClInclude Include="..\..\include\everest\kremlib.h" />
     <ClInclude Include="..\..\include\everest\x25519.h" />
     <ClInclude Include="..\..\include\mbedtls\aes.h" />
@@ -180,6 +185,7 @@
     <ClInclude Include="..\..\include\mbedtls\ecjpake.h" />
     <ClInclude Include="..\..\include\mbedtls\ecp.h" />
     <ClInclude Include="..\..\include\mbedtls\ecp_internal.h" />
+    <ClInclude Include="..\..\include\mbedtls\eddsa.h" />
     <ClInclude Include="..\..\include\mbedtls\entropy.h" />
     <ClInclude Include="..\..\include\mbedtls\entropy_poll.h" />
     <ClInclude Include="..\..\include\mbedtls\error.h" />
@@ -260,11 +266,13 @@
     <ClCompile Include="..\..\library\ecjpake.c" />
     <ClCompile Include="..\..\library\ecp.c" />
     <ClCompile Include="..\..\library\ecp_curves.c" />
+    <ClCompile Include="..\..\library\eddsa.c" />
     <ClCompile Include="..\..\library\entropy.c" />
     <ClCompile Include="..\..\library\entropy_poll.c" />
     <ClCompile Include="..\..\library\error.c" />
     <ClCompile Include="..\..\library\everest\everest.c" />
     <ClCompile Include="..\..\library\everest\Hacl_Curve25519.c" />
+    <ClCompile Include="..\..\library\everest\Hacl_Ed25519.c" />
     <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt128.c" />
     <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt64.c" />
     <ClCompile Include="..\..\library\everest\x25519.c" />
