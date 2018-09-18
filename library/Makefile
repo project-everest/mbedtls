@@ -209,7 +209,7 @@ libmbedcrypto.dll: $(OBJS_CRYPTO)
 
 clean:
 ifndef WINDOWS
-	rm -f *.o libmbed*
+	rm -f *.o libmbed* $(OBJS_CRYPTO)
 else
 	del /Q /F *.o libmbed* $(OBJS_CRYPTO)
 endif
