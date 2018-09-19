@@ -43,7 +43,7 @@ void mbedtls_eddsa_init( mbedtls_eddsa_context *ctx )
 void mbedtls_eddsa_free( mbedtls_eddsa_context *ctx )
 {
     mbedtls_platform_zeroize( ctx->keys.ed25519.secret, sizeof( ctx->keys.ed25519.secret ) );
-    mbedtls_platform_zeroize( ctx->keys.ed25519.public, sizeof( ctx->keys.ed25519.public ) );
+    mbedtls_platform_zeroize( ctx->keys.ed25519.public_, sizeof( ctx->keys.ed25519.public_ ) );
 }
 
 int mbedtls_eddsa_sign( mbedtls_eddsa_context *ctx,
@@ -84,12 +84,12 @@ int mbedtls_eddsa_verify( mbedtls_eddsa_context *ctx,
     ( void )sig_len; // Not required?
 
     // preconditions of Hacl_Ed25519_verify
-    if( !( sizeof( ctx->keys.ed25519.public ) == 32 &&
+    if( !( sizeof( ctx->keys.ed25519.public_ ) == 32 &&
            sig_len == 64 &&
            msg_len < 4294967232 /* 2^32 - 64 */ ) )
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 
-    if( !Hacl_Ed25519_verify( ( unsigned char* )ctx->keys.ed25519.public,
+    if( !Hacl_Ed25519_verify( ( unsigned char* )ctx->keys.ed25519.public_,
                               ( unsigned char* )msg, msg_len,
                               ( unsigned char* )sig ))
         return MBEDTLS_ERR_ECP_VERIFY_FAILED;
@@ -112,14 +112,14 @@ int mbedtls_eddsa_genkey( mbedtls_eddsa_context *ctx, mbedtls_ecp_group_id gid,
 
     /* See also https://tools.ietf.org/html/rfc8032#section-5.1.5 */
 
-    // preconditions of Hacl_Ed25519_secret_to_public
-    if( !( sizeof( ctx->keys.ed25519.public ) == 32 &&
-          ( ctx->keys.ed25519.public <= ctx->keys.ed25519.secret ||
-            ctx->keys.ed25519.public >= ctx->keys.ed25519.secret +
+    // preconditions of Hacl_Ed25519_secret_to_public_
+    if( !( sizeof( ctx->keys.ed25519.public_ ) == 32 &&
+          ( ctx->keys.ed25519.public_ <= ctx->keys.ed25519.secret ||
+            ctx->keys.ed25519.public_ >= ctx->keys.ed25519.secret +
               sizeof( ctx->keys.ed25519.secret ) ) ) )
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 
-    Hacl_Ed25519_secret_to_public( ctx->keys.ed25519.public, ctx->keys.ed25519.secret );
+    Hacl_Ed25519_secret_to_public( ctx->keys.ed25519.public_, ctx->keys.ed25519.secret );
 
     return( 0 );
 }
