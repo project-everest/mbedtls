@@ -34,7 +34,8 @@
 #define MBEDTLS_EDDSA_MAX_LEN 64
 
 typedef struct {
-    unsigned char secret[32], public[32];
+    unsigned char secret[32];
+    unsigned char public_[32];
 } mbedtls_ed25519_keys;
 
 /**
