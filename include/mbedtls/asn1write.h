@@ -137,20 +137,21 @@ int mbedtls_asn1_write_oid( unsigned char **p, unsigned char *start,
  *
  * \note            This function works backwards in data buffer.
  *
- * \param p         The reference to the current position pointer.
- * \param start     The start of the buffer, for bounds-checking.
- * \param oid       The OID of the algorithm to write.
- * \param oid_len   The length of the algorithm's OID.
- * \param par_len   The length of the parameters, which must be already written.
- *                  If 0, NULL parameters are added
+ * \param p         reference to current position pointer
+ * \param start     start of the buffer (for bounds-checking)
+ * \param oid       the OID of the algorithm
+ * \param oid_len   length of the OID
+ * \param par_len   length of parameters, which must be already written.
+ * \param include_params boolean to determine whether a NULL should be added if the
+ *                  length of parameters is zero (Note: EdDSA requires empty parameters;
+ *                  RFC8410: '... the parameters MUST be absent'.)
  *
  * \return          The number of bytes written to \p p on success.
  * \return          A negative \c MBEDTLS_ERR_ASN1_XXX error code on failure.
  */
-int mbedtls_asn1_write_algorithm_identifier( unsigned char **p,
-                                             unsigned char *start,
-                                             const char *oid, size_t oid_len,
-                                             size_t par_len );
+int mbedtls_asn1_write_algorithm_identifier( unsigned char **p, unsigned char *start,
+                                     const char *oid, size_t oid_len,
+                                     size_t par_len, int include_params );
 
 /**
  * \brief           Write a boolean tag (#MBEDTLS_ASN1_BOOLEAN) and value

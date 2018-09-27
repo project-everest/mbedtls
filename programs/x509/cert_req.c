@@ -63,6 +63,7 @@ int main( void )
 #define DFL_DEBUG_LEVEL         0
 #define DFL_OUTPUT_FILENAME     "cert.req"
 #define DFL_SUBJECT_NAME        "CN=Cert,O=mbed TLS,C=UK"
+#define DFL_DIGEST              MBEDTLS_MD_SHA256
 #define DFL_KEY_USAGE           0
 #define DFL_NS_CERT_TYPE        0
 #define DFL_MD_ALG              MBEDTLS_MD_SHA256
@@ -75,6 +76,9 @@ int main( void )
     "    debug_level=%%d      default: 0 (disabled)\n"  \
     "    output_file=%%s      default: cert.req\n"      \
     "    subject_name=%%s     default: CN=Cert,O=mbed TLS,C=UK\n"   \
+    "    md=%%s                   default: SHA256\n"        \
+    "                            Supported values:\n"       \
+    "                            MD5, SHA1, SHA256, SHA512\n"\
     "    key_usage=%%s        default: (empty)\n"       \
     "                        Comma-separated-list of values:\n"     \
     "                          digital_signature\n"     \
@@ -110,6 +114,7 @@ struct options
     int debug_level;            /* level of debugging                   */
     const char *output_file;    /* where to store the constructed key file  */
     const char *subject_name;   /* subject name for certificate request */
+    mbedtls_md_type_t md;       /* Hash used for signing                */
     unsigned char key_usage;    /* key usage flags                      */
     unsigned char ns_cert_type; /* NS cert type                         */
     mbedtls_md_type_t md_alg;   /* Hash algorithm used for signature.   */
@@ -177,6 +182,7 @@ int main( int argc, char *argv[] )
     opt.debug_level         = DFL_DEBUG_LEVEL;
     opt.output_file         = DFL_OUTPUT_FILENAME;
     opt.subject_name        = DFL_SUBJECT_NAME;
+    opt.md                  = DFL_DIGEST;
     opt.key_usage           = DFL_KEY_USAGE;
     opt.ns_cert_type        = DFL_NS_CERT_TYPE;
     opt.md_alg              = DFL_MD_ALG;
@@ -207,49 +213,17 @@ int main( int argc, char *argv[] )
         }
         else if( strcmp( p, "md" ) == 0 )
         {
-            if( strcmp( q, "SHA256" ) == 0 )
-            {
-                opt.md_alg = MBEDTLS_MD_SHA256;
-            }
-            else if( strcmp( q, "SHA224" ) == 0 )
-            {
-                opt.md_alg = MBEDTLS_MD_SHA224;
-            }
-            else
-#if defined(MBEDTLS_MD5_C)
-            if( strcmp( q, "MD5" ) == 0 )
-            {
-                opt.md_alg = MBEDTLS_MD_MD5;
-            }
-            else
-#endif /* MBEDTLS_MD5_C */
-#if defined(MBEDTLS_MD4_C)
-            if( strcmp( q, "MD4" ) == 0 )
-            {
-                opt.md_alg = MBEDTLS_MD_MD4;
-            }
-            else
-#endif /* MBEDTLS_MD5_C */
-#if defined(MBEDTLS_SHA1_C)
             if( strcmp( q, "SHA1" ) == 0 )
-            {
-                opt.md_alg = MBEDTLS_MD_SHA1;
-            }
+                opt.md = MBEDTLS_MD_SHA1;
+            else if( strcmp( q, "SHA256" ) == 0 )
+                opt.md = MBEDTLS_MD_SHA256;
+            else if( strcmp( q, "SHA512" ) == 0 )
+                opt.md = MBEDTLS_MD_SHA512;
+            else if( strcmp( q, "MD5" ) == 0 )
+                opt.md = MBEDTLS_MD_MD5;
             else
-#endif /* MBEDTLS_SHA1_C */
-#if defined(MBEDTLS_SHA512_C)
-            if( strcmp( q, "SHA384" ) == 0 )
             {
-                opt.md_alg = MBEDTLS_MD_SHA384;
-            }
-            else
-            if( strcmp( q, "SHA512" ) == 0 )
-            {
-                opt.md_alg = MBEDTLS_MD_SHA512;
-            }
-            else
-#endif /* MBEDTLS_SHA512_C */
-            {
+                mbedtls_printf( "Invalid argument for option %s\n", p );
                 goto usage;
             }
         }
@@ -318,6 +292,8 @@ int main( int argc, char *argv[] )
 
     if( opt.ns_cert_type )
         mbedtls_x509write_csr_set_ns_cert_type( &req, opt.ns_cert_type );
+
+    mbedtls_x509write_csr_set_md_alg( &req, opt.md );
 
     /*
      * 0. Seed the PRNG

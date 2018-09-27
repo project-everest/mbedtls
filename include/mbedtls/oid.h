@@ -357,6 +357,21 @@
 /* brainpoolP512r1 OBJECT IDENTIFIER ::= {versionOne 13} */
 #define MBEDTLS_OID_EC_GRP_BP512R1          MBEDTLS_OID_EC_BRAINPOOL_V1 "\x0D"
 
+
+/* RFC 8410, Sec 9
+ *
+ * id-edwards-curve-algs OBJECT IDENTIFIER ::= { 1 3 101 }
+ *
+ * id-X25519        OBJECT IDENTIFIER ::= { id-edwards-curve-algs 110 }
+ * id-X448          OBJECT IDENTIFIER ::= { id-edwards-curve-algs 111 }
+ * id-Ed25519       OBJECT IDENTIFIER ::= { id-edwards-curve-algs 112 }
+ * id-Ed448         OBJECT IDENTIFIER ::= { id-edwards-curve-algs 113 } */
+#define MBEDTLS_OID_EC_EDWARDS_CURVE_ALGS   MBEDTLS_OID_ISO_IDENTIFIED_ORG "\x65"
+#define MBEDTLS_OID_EC_GRP_X25519           MBEDTLS_OID_EC_EDWARDS_CURVE_ALGS "\x6E"
+#define MBEDTLS_OID_EC_GRP_X448             MBEDTLS_OID_EC_EDWARDS_CURVE_ALGS "\x6F"
+#define MBEDTLS_OID_EC_GRP_ED25519          MBEDTLS_OID_EC_EDWARDS_CURVE_ALGS "\x70"
+#define MBEDTLS_OID_EC_GRP_ED448            MBEDTLS_OID_EC_EDWARDS_CURVE_ALGS "\x71"
+
 /*
  * SEC1 C.1
  *
@@ -395,6 +410,9 @@
  *   iso(1) member-body(2) us(840) ansi-X9-62(10045) signatures(4)
  *   ecdsa-with-SHA2(3) 4 } */
 #define MBEDTLS_OID_ECDSA_SHA512            MBEDTLS_OID_ANSI_X9_62_SIG_SHA2 "\x04"
+
+/* RFC 8410 */
+#define MBEDTLS_OID_EDDSA_SHA512            MBEDTLS_OID_EC_GRP_ED25519
 
 #ifdef __cplusplus
 extern "C" {
