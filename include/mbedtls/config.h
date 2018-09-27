@@ -2076,7 +2076,7 @@
  *
  * This module provides debugging functions.
  */
-#define MBEDTLS_DEBUG_C
+//#define MBEDTLS_DEBUG_C
 
 /**
  * \def MBEDTLS_DES_C
@@ -2159,16 +2159,16 @@
  */
 #define MBEDTLS_ECDSA_C
 
- /**
-  * \def MBEDTLS_EDDSA_C
-  *
-  * Enable Edwards-curve DSA library.
-  *
-  * Module:  library/eddsa.c
-  * Caller:
-  *
-  * Requires: MBEDTLS_ECP_C, MBEDTLS_ASN1_WRITE_C, MBEDTLS_ASN1_PARSE_C
-  */
+/**
+ * \def MBEDTLS_EDDSA_C
+ *
+ * Enable Edwards-curve DSA library.
+ *
+ * Module:  library/eddsa.c
+ * Caller:
+ *
+ * Requires: MBEDTLS_ECP_C, MBEDTLS_ASN1_WRITE_C, MBEDTLS_ASN1_PARSE_C
+ */
 #define MBEDTLS_EDDSA_C
 
 /**

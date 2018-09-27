@@ -34,19 +34,20 @@
 #define MBEDTLS_EDDSA_MAX_LEN 64
 
 typedef struct {
-    unsigned char secret[32];
+    unsigned char private_[32];
     unsigned char public_[32];
 } mbedtls_ed25519_keys;
+
+typedef union {
+    mbedtls_ed25519_keys ed25519;
+} mbedtls_eddsa_keys;
 
 /**
  * \brief           The EdDSA context structure.
  */
 typedef struct {
     mbedtls_ecp_group_id id;
-    union {
-        mbedtls_ed25519_keys ed25519;
-    }
-    keys;
+    mbedtls_eddsa_keys keys;
     unsigned char tmp[MBEDTLS_EDDSA_MAX_LEN];
 }
 mbedtls_eddsa_context;
@@ -73,10 +74,9 @@ void mbedtls_eddsa_free( mbedtls_eddsa_context *ctx );
 /**
  * \brief           This function computes an EdDSA signature.
  *
- * \param grp       The ECP group.
+ * \param ctx       The EdDSA context.
  * \param sig       The signature.
  * \param max_sig_len The maximum length of \p sig.
- * \param key       The private signing key.
  * \param msg       The message to sign.
  * \param msg_len   The length of \p msg.
  * \param f_rng     The RNG function.
@@ -94,7 +94,7 @@ int mbedtls_eddsa_sign( mbedtls_eddsa_context *ctx,
 /**
  * \brief           This function verifies an EdDSA signature.
  *
- * \param grp       The ECP group.
+ * \param ctx       The EdDSA context.
  * \param msg       The message.
  * \param msg_len   The length of \p msg.
  * \param sig       The signature to verify.
@@ -169,6 +169,19 @@ int mbedtls_eddsa_write_signature( mbedtls_eddsa_context *ctx,
 int mbedtls_eddsa_read_signature( mbedtls_eddsa_context *ctx,
                                   const unsigned char *msg, size_t msg_len,
                                   const unsigned char *sig, size_t sig_len );
+
+/** \brief           This function writes an EdDSA key to a buffer
+ *
+ * \param key        The key.
+ * \param key_size   Size/length of the key.
+ * \param buf        The buffer to write to.
+ * \param buflen     The size of \p buf.
+ * \param olen       The number of characters written to buf.
+ *
+ * \return           \c 0 on success.
+ */
+int mbedtls_eddsa_write_string( const unsigned char *key, size_t key_size,
+                                char *buf, size_t buflen, size_t *olen );
 
 #ifdef __cplusplus
 }

@@ -210,6 +210,35 @@ void mbedtls_debug_print_ecp( const mbedtls_ssl_context *ssl, int level,
 }
 #endif /* MBEDTLS_ECP_C */
 
+#if defined(MBEDTLS_EDDSA_C)
+void mbedtls_debug_print_eddsa( const mbedtls_ssl_context *ssl, int level,
+    const char *file, int line,
+    const char *text, const mbedtls_eddsa_keys * keys)
+{
+    size_t len;
+    char str[DEBUG_BUF_SIZE] = "";
+    char tmp[DEBUG_BUF_SIZE] = "";
+
+    if( ssl->conf == NULL || ssl->conf->f_dbg == NULL || level > debug_threshold )
+        return;
+
+    strcat( str, text );
+    strcat( str, "private=" );
+    mbedtls_eddsa_write_string( keys->ed25519.private_, 32, tmp, sizeof( tmp ), &len );
+    strncat( str, tmp, len );
+    strncat( str, "\n", 1 );
+    debug_send_line( ssl, level, file, line, str );
+
+    str[0]=0;
+    strcat( str, text );
+    strcat( str, "public=" );
+    mbedtls_eddsa_write_string( keys->ed25519.public_, 32, tmp, sizeof( tmp ), &len );
+    strncat( str, tmp, len );
+    strncat( str, "\n", 1 );
+    debug_send_line( ssl, level, file, line, str );
+}
+#endif /* MBEDTLS_EDDSA_C */
+
 #if defined(MBEDTLS_BIGNUM_C)
 void mbedtls_debug_print_mpi( const mbedtls_ssl_context *ssl, int level,
                       const char *file, int line,
@@ -281,7 +310,7 @@ static void debug_print_pk( const mbedtls_ssl_context *ssl, int level,
 {
     size_t i;
     mbedtls_pk_debug_item items[MBEDTLS_PK_DEBUG_MAX_ITEMS];
-    char name[16];
+    char name[32];
 
     memset( items, 0, sizeof( items ) );
 
@@ -306,6 +335,11 @@ static void debug_print_pk( const mbedtls_ssl_context *ssl, int level,
 #if defined(MBEDTLS_ECP_C)
         if( items[i].type == MBEDTLS_PK_DEBUG_ECP )
             mbedtls_debug_print_ecp( ssl, level, file, line, name, items[i].value );
+        else
+#endif
+#if defined(MBEDTLS_EDDSA_C)
+        if (items[i].type == MBEDTLS_PK_DEBUG_EDDSA )
+            mbedtls_debug_print_eddsa( ssl, level, file, line, name, items[i].value);
         else
 #endif
             debug_send_line( ssl, level, file, line,
@@ -407,9 +441,13 @@ void mbedtls_debug_printf_ecdh( const mbedtls_ssl_context *ssl, int level,
 #else
     switch( ecdh->var )
     {
+        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
+            mbedtls_debug_printf_ecdh_internal( ssl, level, file, line, ecdh, attr );
+            return;
+        case MBEDTLS_ECDH_VARIANT_NONE:
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
         default:
-            mbedtls_debug_printf_ecdh_internal( ssl, level, file, line, ecdh,
-                                                attr );
+            return;
     }
 #endif
 }

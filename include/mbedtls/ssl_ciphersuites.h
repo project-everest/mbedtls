@@ -280,6 +280,9 @@ extern "C" {
 #define MBEDTLS_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256     0xCCAD /**< TLS 1.2 */
 #define MBEDTLS_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256     0xCCAE /**< TLS 1.2 */
 
+/* Custom EdDSA ciphersuites */
+#define MBEDTLS_TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256 0xFF01 /* private use/experimental */
+
 /* Reminder: update mbedtls_ssl_premaster_secret when adding a new key exchange.
  * Reminder: update MBEDTLS_KEY_EXCHANGE__xxx below
  */
@@ -296,6 +299,9 @@ typedef enum {
     MBEDTLS_KEY_EXCHANGE_ECDH_RSA,
     MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA,
     MBEDTLS_KEY_EXCHANGE_ECJPAKE,
+#if defined(MBEDTLS_EDDSA_C)
+    MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA,
+#endif
 } mbedtls_key_exchange_type_t;
 
 /* Key exchanges using a certificate */
@@ -421,6 +427,9 @@ static inline int mbedtls_ssl_ciphersuite_has_pfs( const mbedtls_ssl_ciphersuite
         case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
+#endif
         case MBEDTLS_KEY_EXCHANGE_ECJPAKE:
             return( 1 );
 
@@ -473,6 +482,9 @@ static inline int mbedtls_ssl_ciphersuite_cert_req_allowed( const mbedtls_ssl_ci
         case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
+#endif
             return( 1 );
 
         default:
@@ -500,6 +512,9 @@ static inline int mbedtls_ssl_ciphersuite_uses_ecdhe( const mbedtls_ssl_ciphersu
 {
     switch( info->key_exchange )
     {
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
+#endif
         case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
@@ -519,6 +534,9 @@ static inline int mbedtls_ssl_ciphersuite_uses_server_signature( const mbedtls_s
         case MBEDTLS_KEY_EXCHANGE_DHE_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
+#endif
             return( 1 );
 
         default:

@@ -322,6 +322,13 @@ int mbedtls_x509write_crt_der( mbedtls_x509write_cert *ctx, unsigned char *buf, 
         pk_alg = MBEDTLS_PK_RSA;
     else if( mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_ECDSA ) )
         pk_alg = MBEDTLS_PK_ECDSA;
+#if defined(MBEDTLS_EDDSA_C)
+    else if( mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_EDDSA ) ) {
+        pk_alg = MBEDTLS_PK_EDDSA;
+        if( ctx->md_alg != MBEDTLS_MD_SHA512 )
+            return MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE;
+    }
+#endif
     else
         return( MBEDTLS_ERR_X509_INVALID_ALG );
 
@@ -386,8 +393,12 @@ int mbedtls_x509write_crt_der( mbedtls_x509write_cert *ctx, unsigned char *buf, 
     /*
      *  Signature   ::=  AlgorithmIdentifier
      */
-    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, tmp_buf,
-                       sig_oid, strlen( sig_oid ), 0 ) );
+#if defined(MBEDTLS_EDDSA_C)
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, tmp_buf, sig_oid, strlen( sig_oid ), 0,
+                                    !mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_EDDSA )) );
+#else
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, tmp_buf, sig_oid, strlen( sig_oid ), 0, 1 ) );
+#endif /* MBEDTLS_EDDSA_C */
 
     /*
      *  Serial   ::=  INTEGER
@@ -432,8 +443,14 @@ int mbedtls_x509write_crt_der( mbedtls_x509write_cert *ctx, unsigned char *buf, 
      * Write data to output buffer
      */
     c2 = buf + size;
+#if defined(MBEDTLS_EDDSA_C)
     MBEDTLS_ASN1_CHK_ADD( sig_and_oid_len, mbedtls_x509_write_sig( &c2, buf,
-                                        sig_oid, sig_oid_len, sig, sig_len ) );
+                                        sig_oid, sig_oid_len, sig, sig_len,
+                                        !mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_EDDSA ) ) );
+#else
+    MBEDTLS_ASN1_CHK_ADD( sig_and_oid_len, mbedtls_x509_write_sig( &c2, buf,
+                                        sig_oid, sig_oid_len, sig, sig_len, 1 ) );
+#endif /* MBEDTLS_EDDSA_C */
 
     if( len > (size_t)( c2 - buf ) )
         return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );

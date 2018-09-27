@@ -161,6 +161,15 @@ int mbedtls_pk_write_pubkey( unsigned char **p, unsigned char *start,
         MBEDTLS_ASN1_CHK_ADD( len, pk_write_ec_pubkey( p, start, mbedtls_pk_ec( *key ) ) );
     else
 #endif
+#if defined(MBEDTLS_EDDSA_C)
+    if( mbedtls_pk_get_type( key ) == MBEDTLS_PK_EDDSA )
+    {
+        len = 32;
+        *p -= len;
+        memcpy( *p, mbedtls_pk_eddsa( *key )->keys.ed25519.public_, len );
+    }
+    else
+#endif
         return( MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE );
 
     return( (int) len );
@@ -202,10 +211,16 @@ int mbedtls_pk_write_pubkey_der( mbedtls_pk_context *key, unsigned char *buf, si
     {
         MBEDTLS_ASN1_CHK_ADD( par_len, pk_write_ec_param( &c, buf, mbedtls_pk_ec( *key ) ) );
     }
+    else
 #endif
-
-    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, buf, oid, oid_len,
-                                                        par_len ) );
+#if defined(MBEDTLS_EDDSA_C)
+    if( mbedtls_pk_get_type( key ) == MBEDTLS_PK_ECKEY )
+    {
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, buf, oid, oid_len, par_len, !mbedtls_pk_can_do( key, MBEDTLS_PK_EDDSA ) ) );
+    }
+    else
+#endif /* #if defined(MBEDTLS_EDDSA_C) */
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, buf, oid, oid_len, par_len, 1 ) );
 
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &c, buf, len ) );
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONSTRUCTED |
@@ -353,6 +368,74 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
     }
     else
 #endif /* MBEDTLS_ECP_C */
+
+#if defined(MBEDTLS_EDDSA_C)
+    if( mbedtls_pk_get_type( key ) == MBEDTLS_PK_EDDSA )
+    {
+        const mbedtls_eddsa_context *ctx = mbedtls_pk_eddsa( *key );
+        size_t attr_len = 0, pub_len = 0, par_len = 0;
+
+        /* RFC 8410, Sec 7
+
+            OneAsymmetricKey ::= SEQUENCE {
+                version Version,
+                privateKeyAlgorithm PrivateKeyAlgorithmIdentifier,
+                privateKey PrivateKey,
+                attributes [0] IMPLICIT Attributes OPTIONAL,
+                ...,
+                [[2: publicKey [1] IMPLICIT PublicKey OPTIONAL ]],
+                ...
+            }
+
+            PrivateKey ::= OCTET STRING
+
+            PublicKey ::= BIT STRING
+        */
+
+        /* publicKey */
+        MBEDTLS_ASN1_CHK_ADD( pub_len, mbedtls_asn1_write_bitstring( &c, buf, ctx->keys.ed25519.public_, 32 * 8 ) );
+
+        MBEDTLS_ASN1_CHK_ADD( pub_len, mbedtls_asn1_write_len( &c, buf, pub_len ) );
+        MBEDTLS_ASN1_CHK_ADD( pub_len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONTEXT_SPECIFIC | 1 ) );
+        len += pub_len;
+
+        /* attributes */
+        MBEDTLS_ASN1_CHK_ADD( attr_len, mbedtls_asn1_write_len( &c, buf, attr_len ) );
+        MBEDTLS_ASN1_CHK_ADD( attr_len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONTEXT_SPECIFIC | MBEDTLS_ASN1_CONSTRUCTED | 0 ) );
+        len += attr_len;
+
+        /* privateKey
+         * RFC 8410: "Thus, when encoding a
+         *  OneAsymmetricKey object, the private key is wrapped in a
+         *  CurvePrivateKey object and wrapped by the OCTET STRING of the
+         *  "privateKey" field."
+         */
+        {
+            unsigned char tmp[34];
+            tmp[0] = 4; /* tag */
+            tmp[1] = 32; /* len */
+            memcpy( &tmp[2], ctx->keys.ed25519.private_, 32 );
+            MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_octet_string( &c, buf, tmp, sizeof( tmp ) ) );
+        }
+
+        /* privateKeyAlgorithm */
+        {
+            const char *oid = MBEDTLS_OID_EC_GRP_ED25519;
+            size_t oid_len = 3;
+            MBEDTLS_ASN1_CHK_ADD( par_len, mbedtls_asn1_write_oid( &c, buf, oid, oid_len ) );
+            MBEDTLS_ASN1_CHK_ADD( par_len, mbedtls_asn1_write_len( &c, buf, par_len ) );
+            MBEDTLS_ASN1_CHK_ADD( par_len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) );
+            len += par_len;
+        }
+
+        /* version (0 without public key, 1 with public key) */
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_int( &c, buf, 1 ) );
+
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &c, buf, len ) );
+        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) );
+    }
+    else
+#endif /* MBEDTLS_EDDSA_C */
         return( MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE );
 
     return( (int) len );
@@ -367,6 +450,8 @@ int mbedtls_pk_write_key_der( mbedtls_pk_context *key, unsigned char *buf, size_
 #define PEM_END_PRIVATE_KEY_RSA     "-----END RSA PRIVATE KEY-----\n"
 #define PEM_BEGIN_PRIVATE_KEY_EC    "-----BEGIN EC PRIVATE KEY-----\n"
 #define PEM_END_PRIVATE_KEY_EC      "-----END EC PRIVATE KEY-----\n"
+#define PEM_BEGIN_PRIVATE_KEY       "-----BEGIN PRIVATE KEY-----\n"
+#define PEM_END_PRIVATE_KEY         "-----END PRIVATE KEY-----\n"
 
 /*
  * Max sizes of key per types. Shown as tag + len (+ content).
@@ -496,6 +581,14 @@ int mbedtls_pk_write_key_pem( mbedtls_pk_context *key, unsigned char *buf, size_
     {
         begin = PEM_BEGIN_PRIVATE_KEY_EC;
         end = PEM_END_PRIVATE_KEY_EC;
+    }
+    else
+#endif
+#if defined(MBEDTLS_EDDSA_C)
+    if( mbedtls_pk_get_type( key ) == MBEDTLS_PK_EDDSA )
+    {
+        begin = PEM_BEGIN_PRIVATE_KEY;
+        end = PEM_END_PRIVATE_KEY;
     }
     else
 #endif
