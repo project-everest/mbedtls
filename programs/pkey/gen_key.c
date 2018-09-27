@@ -249,6 +249,10 @@ int main( int argc, char *argv[] )
                 opt.type = MBEDTLS_PK_RSA;
             else if( strcmp( q, "ec" ) == 0 )
                 opt.type = MBEDTLS_PK_ECKEY;
+#if defined(MBEDTLS_EDDSA_C)
+            else if( strcmp( q, "eddsa" ) == 0 )
+                opt.type = MBEDTLS_PK_EDDSA;
+#endif
             else
                 goto usage;
         }
@@ -274,6 +278,17 @@ int main( int argc, char *argv[] )
             if( ( curve_info = mbedtls_ecp_curve_info_from_name( q ) ) == NULL )
                 goto usage;
             opt.ec_curve = curve_info->grp_id;
+        }
+#endif
+#if defined (MBEDTLS_EDDSA_C)
+        else if( strcmp( p, "ec_curve" ) == 0 )
+        {
+            if( strcmp( q, "x25519" ) )
+                opt.ec_curve = MBEDTLS_ECP_DP_CURVE25519;
+            else if( strcmp( q, "x448" ) )
+                opt.ec_curve = MBEDTLS_ECP_DP_CURVE448;
+            else
+                goto usage;
         }
 #endif
         else if( strcmp( p, "filename" ) == 0 )
@@ -356,6 +371,20 @@ int main( int argc, char *argv[] )
     }
     else
 #endif /* MBEDTLS_ECP_C */
+#if defined(MBEDTLS_EDDSA_C)
+    if( opt.type == MBEDTLS_PK_EDDSA )
+    {
+        ret = mbedtls_eddsa_genkey( mbedtls_pk_eddsa( key ), opt.ec_curve,
+                                    mbedtls_ctr_drbg_random, &ctr_drbg );
+
+        if( ret != 0 )
+        {
+            mbedtls_printf( " failed\n  !  mbedtls_eddsa_genkey returned -0x%04x", -ret );
+            goto exit;
+        }
+    }
+    else
+#endif /* MBEDTLS_EDDSA_C */
     {
         mbedtls_printf( " failed\n  !  key type not supported\n" );
         goto exit;
@@ -398,6 +427,20 @@ int main( int argc, char *argv[] )
         mbedtls_mpi_write_file( "X_Q:   ", &ecp->Q.X, 16, NULL );
         mbedtls_mpi_write_file( "Y_Q:   ", &ecp->Q.Y, 16, NULL );
         mbedtls_mpi_write_file( "D:     ", &ecp->d  , 16, NULL );
+    }
+    else
+#endif
+#if defined(MBEDTLS_EDDSA_C)
+    if( mbedtls_pk_get_type( &key ) == MBEDTLS_PK_EDDSA )
+    {
+        size_t len;
+        char tmp[256] = "";
+        mbedtls_eddsa_context *ctx = mbedtls_pk_eddsa( key );
+        mbedtls_printf( "    curve: %s\n", mbedtls_ecp_curve_info_from_grp_id( ctx->id )->name );
+        mbedtls_eddsa_write_string( ctx->keys.ed25519.private_, 32, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "    private: %s\n", tmp );
+        mbedtls_eddsa_write_string( ctx->keys.ed25519.public_, 32, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "    public: %s\n", tmp );
     }
     else
 #endif

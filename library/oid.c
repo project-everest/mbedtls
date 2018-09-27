@@ -393,7 +393,15 @@ static const oid_sig_alg_t oid_sig_alg[] =
         MBEDTLS_MD_SHA512,   MBEDTLS_PK_ECDSA,
     },
 #endif /* MBEDTLS_SHA512_C */
-#endif /* MBEDTLS_ECDSA_C */
+#endif /* MBEDTLS_EDDSA_C */
+#if defined(MBEDTLS_EDDSA_C)
+#if defined(MBEDTLS_SHA512_C)
+    {
+        { ADD_LEN( MBEDTLS_OID_EDDSA_SHA512 ),     "eddsa-with-SHA512",    "EDDSA with SHA512" },
+        MBEDTLS_MD_SHA512,   MBEDTLS_PK_EDDSA,
+    },
+#endif /* MBEDTLS_SHA512_C */
+#endif /* MBEDTLS_EDDSA_C */
 #if defined(MBEDTLS_RSA_C)
     {
         { ADD_LEN( MBEDTLS_OID_RSASSA_PSS ),        "RSASSA-PSS",           "RSASSA-PSS" },
@@ -434,6 +442,16 @@ static const oid_pk_alg_t oid_pk_alg[] =
         { ADD_LEN( MBEDTLS_OID_EC_ALG_ECDH ),          "id-ecDH",          "EC key for ECDH" },
         MBEDTLS_PK_ECKEY_DH,
     },
+#if defined(MBEDTLS_EDDSA_C)
+    {
+        { ADD_LEN( MBEDTLS_OID_EC_GRP_X25519 ),        "id-X25519",        "X25519 key" },
+        MBEDTLS_PK_EDDSA,
+    },
+    {
+        { ADD_LEN( MBEDTLS_OID_EC_GRP_ED25519 ),       "id-Ed25519",       "Ed25519 key" },
+        MBEDTLS_PK_EDDSA,
+    },
+#endif /* MBEDTLS_EDDSA_C */
     {
         { NULL, 0, NULL, NULL },
         MBEDTLS_PK_NONE,
@@ -521,6 +539,12 @@ static const oid_ecp_grp_t oid_ecp_grp[] =
         MBEDTLS_ECP_DP_BP512R1,
     },
 #endif /* MBEDTLS_ECP_DP_BP512R1_ENABLED */
+#if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+    {
+        { ADD_LEN( MBEDTLS_OID_EC_GRP_X25519 ),    "curve25519",    "curve25519" },
+        MBEDTLS_ECP_DP_CURVE25519,
+    },
+#endif /* MBEDTLS_ECP_DP_CURVE25519_ENABLED */
     {
         { NULL, 0, NULL, NULL },
         MBEDTLS_ECP_DP_NONE,

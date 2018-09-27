@@ -315,7 +315,8 @@ int mbedtls_x509_write_names( unsigned char **p, unsigned char *start,
                       mbedtls_asn1_named_data *first );
 int mbedtls_x509_write_sig( unsigned char **p, unsigned char *start,
                     const char *oid, size_t oid_len,
-                    unsigned char *sig, size_t size );
+                    unsigned char *sig, size_t size,
+                    int write_params );
 
 #define MBEDTLS_X509_SAFE_SNPRINTF                          \
     do {                                                    \

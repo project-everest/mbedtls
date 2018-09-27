@@ -229,6 +229,20 @@ int main( int argc, char *argv[] )
         }
         else
 #endif
+#if defined(MBEDTLS_EDDSA_C)
+        if( mbedtls_pk_get_type( &pk ) == MBEDTLS_PK_EDDSA )
+        {
+            size_t len;
+            char tmp[256] = "";
+            mbedtls_eddsa_context *ctx = mbedtls_pk_eddsa( pk );
+            mbedtls_printf( "    curve: %s\n", mbedtls_ecp_curve_info_from_grp_id( ctx->id )->name );
+            mbedtls_eddsa_write_string( ctx->keys.ed25519.private_, 32, tmp, sizeof( tmp ), &len );
+            mbedtls_printf( "    private: %s\n", tmp );
+            mbedtls_eddsa_write_string( ctx->keys.ed25519.public_, 32, tmp, sizeof( tmp ), &len );
+            mbedtls_printf( "    public: %s\n", tmp );
+        }
+        else
+#endif
         {
             mbedtls_printf("Do not know how to print key information for this type\n" );
             goto cleanup;
@@ -276,6 +290,18 @@ int main( int argc, char *argv[] )
             MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "Q(X): ", &ecp->Q.X, 16, NULL ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "Q(Y): ", &ecp->Q.Y, 16, NULL ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "Q(Z): ", &ecp->Q.Z, 16, NULL ) );
+        }
+        else
+#endif
+#if defined(MBEDTLS_EDDSA_C)
+        if( mbedtls_pk_get_type( &pk ) == MBEDTLS_PK_EDDSA )
+        {
+            size_t len;
+            char tmp[256] = "";
+            mbedtls_eddsa_context *ctx = mbedtls_pk_eddsa( pk );
+            mbedtls_printf( "    curve: %s\n", mbedtls_ecp_curve_info_from_grp_id( ctx->id )->name );
+            mbedtls_eddsa_write_string( ctx->keys.ed25519.public_, 32, tmp, sizeof( tmp ), &len );
+            mbedtls_printf( "    public: %s\n", tmp );
         }
         else
 #endif

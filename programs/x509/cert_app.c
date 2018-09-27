@@ -132,7 +132,7 @@ static int my_verify( void *data, mbedtls_x509_crt *crt, int depth, uint32_t *fl
 
     mbedtls_printf( "\nVerify requested for (Depth %d):\n", depth );
     mbedtls_x509_crt_info( buf, sizeof( buf ) - 1, "", crt );
-    mbedtls_printf( "%s", buf );
+    mbedtls_printf( "%s\n", buf );
 
     if ( ( *flags ) == 0 )
         mbedtls_printf( "  This certificate has no flags\n" );

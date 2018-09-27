@@ -45,6 +45,10 @@
 #include "ecdsa.h"
 #endif
 
+#if defined(MBEDTLS_EDDSA_C)
+#include "eddsa.h"
+#endif
+
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
     !defined(inline) && !defined(__cplusplus)
 #define inline __inline
@@ -107,6 +111,7 @@ typedef enum
     MBEDTLS_PK_DEBUG_NONE = 0,
     MBEDTLS_PK_DEBUG_MPI,
     MBEDTLS_PK_DEBUG_ECP,
+    MBEDTLS_PK_DEBUG_EDDSA
 } mbedtls_pk_debug_type;
 
 /**
@@ -175,6 +180,19 @@ static inline mbedtls_ecp_keypair *mbedtls_pk_ec( const mbedtls_pk_context pk )
     return( (mbedtls_ecp_keypair *) (pk).pk_ctx );
 }
 #endif /* MBEDTLS_ECP_C */
+
+#if defined(MBEDTLS_EDDSA_C)
+/**
+ * Quick access to an EdDSA context inside a PK context.
+ *
+ * \warning You must make sure the PK context actually holds an EdDSA context
+ * before using this function!
+ */
+static inline mbedtls_eddsa_context *mbedtls_pk_eddsa( const mbedtls_pk_context pk )
+{
+    return( ( mbedtls_eddsa_context * )( pk ).pk_ctx );
+}
+#endif /* MBEDTLS_EDDSA_C */
 
 #if defined(MBEDTLS_PK_RSA_ALT_SUPPORT)
 /**

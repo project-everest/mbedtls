@@ -195,15 +195,18 @@ int mbedtls_asn1_write_oid( unsigned char **p, unsigned char *start,
 
 int mbedtls_asn1_write_algorithm_identifier( unsigned char **p, unsigned char *start,
                                      const char *oid, size_t oid_len,
-                                     size_t par_len )
+                                     size_t par_len, int include_params )
 {
     int ret;
     size_t len = 0;
 
-    if( par_len == 0 )
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_null( p, start ) );
-    else
-        len += par_len;
+    if( include_params != 0 )
+    {
+        if( par_len == 0 )
+            MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_null( p, start ) );
+        else
+            len += par_len;
+    }
 
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_oid( p, start, oid, oid_len ) );
 
