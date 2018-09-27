@@ -38,15 +38,16 @@ typedef struct {
     unsigned char public_[32];
 } mbedtls_ed25519_keys;
 
+typedef union {
+    mbedtls_ed25519_keys ed25519;
+} mbedtls_eddsa_keys;
+
 /**
  * \brief           The EdDSA context structure.
  */
 typedef struct {
     mbedtls_ecp_group_id id;
-    union {
-        mbedtls_ed25519_keys ed25519;
-    }
-    keys;
+    mbedtls_eddsa_keys keys;
     unsigned char tmp[MBEDTLS_EDDSA_MAX_LEN];
 }
 mbedtls_eddsa_context;

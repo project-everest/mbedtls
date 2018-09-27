@@ -120,13 +120,15 @@ int mbedtls_asn1_write_oid( unsigned char **p, unsigned char *start,
  * \param oid       the OID of the algorithm
  * \param oid_len   length of the OID
  * \param par_len   length of parameters, which must be already written.
- *                  If 0, NULL parameters are added
+ * \param include_params boolean to determine whether a NULL should be added if the
+ *                  length of parameters is zero (Note: EdDSA requires empty parameters;
+ *                  RFC8410: '... the parameters MUST be absent'.)
  *
  * \return          the length written or a negative error code
  */
 int mbedtls_asn1_write_algorithm_identifier( unsigned char **p, unsigned char *start,
                                      const char *oid, size_t oid_len,
-                                     size_t par_len );
+                                     size_t par_len, int include_params );
 
 /**
  * \brief           Write a boolean tag (MBEDTLS_ASN1_BOOLEAN) and value in ASN.1 format

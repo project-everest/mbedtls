@@ -526,6 +526,11 @@ const mbedtls_pk_info_t mbedtls_rsa_alt_info = {
 
 
 #if defined(MBEDTLS_EDDSA_C)
+static size_t eddsa_get_bitlen( const void *ctx )
+{
+    return( 256 );
+}
+
 static int eddsa_can_do( mbedtls_pk_type_t type )
 {
     return( type == MBEDTLS_PK_EDDSA );
@@ -558,6 +563,12 @@ static int eddsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
             hash, hash_len, sig, MBEDTLS_EDDSA_MAX_LEN, sig_len, f_rng, p_rng ) );
 }
 
+static int eddsa_check_pair( const void *pub, const void *prv )
+{
+    printf("EdDSA check pair unexpected; check me.");
+    return( 0 );
+}
+
 static void *eddsa_alloc_wrap( void )
 {
     void *ctx = mbedtls_calloc( 1, sizeof( mbedtls_eddsa_context ) );
@@ -574,19 +585,26 @@ static void eddsa_free_wrap( void *ctx )
     mbedtls_free( ctx );
 }
 
+static void eddsa_debug( const void *ctx, mbedtls_pk_debug_item *items )
+{
+    items->type = MBEDTLS_PK_DEBUG_EDDSA;
+    items->name = "EdDSA secret: ";
+    items->value = ( ( mbedtls_eddsa_context* )ctx )->keys.ed25519.secret;
+}
+
 const mbedtls_pk_info_t mbedtls_eddsa_info = {
     MBEDTLS_PK_EDDSA,
     "EdDSA",
-    eckey_get_bitlen,     /* Compatible key structures */
+    eddsa_get_bitlen,     /* Compatible key structures */
     eddsa_can_do,
     eddsa_verify_wrap,
     eddsa_sign_wrap,
     NULL,
     NULL,
-    eckey_check_pair,   /* Compatible key structures */
+    eddsa_check_pair,     /* Compatible key structures */
     eddsa_alloc_wrap,
     eddsa_free_wrap,
-    eckey_debug,        /* Compatible key structures */
+    eddsa_debug,          /* Compatible key structures */
 };
 #endif /* MBEDTLS_EDDSA_C */
 

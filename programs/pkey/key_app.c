@@ -229,6 +229,22 @@ int main( int argc, char *argv[] )
         }
         else
 #endif
+#if defined(MBEDTLS_EDDSA_C)
+        if( mbedtls_pk_get_type( &pk ) == MBEDTLS_PK_EDDSA )
+        {
+            int i;
+            mbedtls_eddsa_context *ctx = mbedtls_pk_eddsa( pk );
+            printf( "    secret: " );
+            for( i = 0; i < 32; i++ )
+                printf( "%02X", ctx->keys.ed25519.secret[i] );
+            printf( "\n" );
+            printf( "    public: " );
+            for( i = 0; i < 32; i++ )
+                printf( "%02X", ctx->keys.ed25519.public_[i] );
+            printf( "\n" );
+        }
+        else
+#endif
         {
             mbedtls_printf("Do not know how to print key information for this type\n" );
             goto cleanup;
