@@ -442,10 +442,12 @@ static const oid_pk_alg_t oid_pk_alg[] =
         { ADD_LEN( MBEDTLS_OID_EC_ALG_ECDH ),          "id-ecDH",          "EC key for ECDH" },
         MBEDTLS_PK_ECKEY_DH,
     },
+#if defined(MBEDTLS_EDDSA_C)
     {
         { ADD_LEN( MBEDTLS_OID_EC_GRP_ED25519 ),       "id-EdDSA",         "EC key for EdDSA" },
         MBEDTLS_PK_EDDSA,
     },
+#endif /* MBEDTLS_EDDSA_C */
     {
         { NULL, 0, NULL, NULL },
         MBEDTLS_PK_NONE,
