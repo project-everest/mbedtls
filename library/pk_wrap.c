@@ -585,11 +585,11 @@ static void eddsa_free_wrap( void *ctx )
     mbedtls_free( ctx );
 }
 
-static void eddsa_debug( const void *ctx, mbedtls_pk_debug_item *items )
+static void eddsa_debug( const void *ctx, mbedtls_pk_debug_item *item )
 {
-    items->type = MBEDTLS_PK_DEBUG_EDDSA;
-    items->name = "EdDSA secret: ";
-    items->value = ( ( mbedtls_eddsa_context* )ctx )->keys.ed25519.secret;
+    item->type = MBEDTLS_PK_DEBUG_EDDSA;
+    item->name = "EdDSA keys: ";
+    item->value = &( ( mbedtls_eddsa_context* )ctx )->keys;
 }
 
 const mbedtls_pk_info_t mbedtls_eddsa_info = {

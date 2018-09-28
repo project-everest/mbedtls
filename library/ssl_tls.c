@@ -7856,6 +7856,7 @@ static int ssl_preset_default_hashes[] = {
 #endif
 
 static int ssl_preset_suiteb_ciphersuites[] = {
+    MBEDTLS_TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     0
@@ -8137,6 +8138,7 @@ mbedtls_md_type_t mbedtls_ssl_sig_hash_set_find( mbedtls_ssl_sig_hash_set_t *set
         case MBEDTLS_PK_RSA:
             return( set->rsa );
         case MBEDTLS_PK_ECDSA:
+        case MBEDTLS_PK_EDDSA:
             return( set->ecdsa );
         default:
             return( MBEDTLS_MD_NONE );
@@ -8317,6 +8319,7 @@ int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
             case MBEDTLS_KEY_EXCHANGE_DHE_RSA:
             case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
             case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+            case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
                 usage = MBEDTLS_X509_KU_DIGITAL_SIGNATURE;
                 break;
 

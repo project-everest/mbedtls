@@ -210,6 +210,42 @@ void mbedtls_debug_print_ecp( const mbedtls_ssl_context *ssl, int level,
 }
 #endif /* MBEDTLS_ECP_C */
 
+#if defined(MBEDTLS_EDDSA_C)
+void mbedtls_debug_print_eddsa( const mbedtls_ssl_context *ssl, int level,
+    const char *file, int line,
+    const char *text, const mbedtls_eddsa_keys * keys)
+{
+    int i;
+    char str[DEBUG_BUF_SIZE] = "";
+
+    if( ssl->conf == NULL || ssl->conf->f_dbg == NULL || level > debug_threshold )
+        return;
+
+    strcat( str, text );
+    strcat( str, "secret=" );
+    for( i = 0; i < 32; i++ ) {
+        char digits[3] = "";
+        char q = keys->ed25519.secret[i];
+        mbedtls_snprintf( digits, sizeof( digits ), "%02X", q );
+        strcat( str, digits );
+    }
+    strncat( str, "\n", 1 );
+    debug_send_line( ssl, level, file, line, str );
+
+    str[0]=0;
+    strcat( str, text );
+    strcat( str, "public=" );
+    for( i = 0; i < 32; i++ ) {
+        char digits[3] = "";
+        char q = keys->ed25519.public_[i];
+        mbedtls_snprintf( digits, sizeof( digits ), "%02X", q );
+        strcat( str, digits );
+    }
+    strncat( str, "\n", 1 );
+    debug_send_line( ssl, level, file, line, str );
+}
+#endif /* MBEDTLS_EDDSA_C */
+
 #if defined(MBEDTLS_BIGNUM_C)
 void mbedtls_debug_print_mpi( const mbedtls_ssl_context *ssl, int level,
                       const char *file, int line,
@@ -281,7 +317,7 @@ static void debug_print_pk( const mbedtls_ssl_context *ssl, int level,
 {
     size_t i;
     mbedtls_pk_debug_item items[MBEDTLS_PK_DEBUG_MAX_ITEMS];
-    char name[16];
+    char name[32];
 
     memset( items, 0, sizeof( items ) );
 
@@ -306,6 +342,11 @@ static void debug_print_pk( const mbedtls_ssl_context *ssl, int level,
 #if defined(MBEDTLS_ECP_C)
         if( items[i].type == MBEDTLS_PK_DEBUG_ECP )
             mbedtls_debug_print_ecp( ssl, level, file, line, name, items[i].value );
+        else
+#endif
+#if defined(MBEDTLS_EDDSA_C)
+        if (items[i].type == MBEDTLS_PK_DEBUG_EDDSA )
+            mbedtls_debug_print_eddsa( ssl, level, file, line, name, items[i].value);
         else
 #endif
             debug_send_line( ssl, level, file, line,
