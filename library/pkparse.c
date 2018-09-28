@@ -560,6 +560,24 @@ static int pk_get_rsapubkey( unsigned char **p,
 }
 #endif /* MBEDTLS_RSA_C */
 
+#if defined(MBEDTLS_EDDSA_C)
+/*
+ * EdDSA public key is a flat bitstring
+ */
+static int pk_get_eddsa_pubkey( unsigned char **p, const unsigned char *end,
+                                mbedtls_eddsa_context *ctx )
+{
+    if( end - *p < 32 )
+        return MBEDTLS_ERR_PK_INVALID_PUBKEY;
+
+    ctx->id = MBEDTLS_ECP_DP_CURVE25519;
+    memcpy( ctx->keys.ed25519.public_, *p, 32 );
+    *p += 32;
+
+    return( 0 );
+}
+#endif /* MBEDTLS_EDDSA_C */
+
 /* Get a PK algorithm identifier
  *
  *  AlgorithmIdentifier  ::=  SEQUENCE  {
@@ -649,12 +667,10 @@ int mbedtls_pk_parse_subpubkey( unsigned char **p, const unsigned char *end,
 #if defined(MBEDTLS_EDDSA_C)
     if( pk_alg == MBEDTLS_PK_EDDSA )
     {
-        memcpy( mbedtls_pk_eddsa( *pk )->keys.ed25519.public_, p, 32 );
-        *p += 32;
-        ret = 0;
+        ret = pk_get_eddsa_pubkey( p, end, mbedtls_pk_eddsa( *pk ) );
     }
     else
-#endif
+#endif /* MBEDTLS_EDDSA_C */
         ret = MBEDTLS_ERR_PK_UNKNOWN_PK_ALG;
 
     if( ret == 0 && *p != end )
@@ -924,10 +940,10 @@ static int pk_parse_key_sec1_der( mbedtls_ecp_keypair *eck,
 #endif /* MBEDTLS_ECP_C */
 
 #if defined(MBEDTLS_EDDSA_C)
-static int pk_parse_key_eddsa_from_alg( mbedtls_eddsa_keys *keys,
-                                        const unsigned char *key,
-                                        size_t keylen,
-                                        int version)
+static int pk_parse_key_eddsa_from_pk( mbedtls_eddsa_context *ctx,
+                                       const unsigned char *key,
+                                       size_t keylen,
+                                       int version)
 {
     int ret;
     size_t len;
@@ -953,15 +969,11 @@ static int pk_parse_key_eddsa_from_alg( mbedtls_eddsa_keys *keys,
      *
      */
 
-    // We assume we have parsed version, pk_alg, params via pk_parse_key_pkcs8_pk_alg
-
     if( ( ret = mbedtls_asn1_get_tag( &p, end, &len, MBEDTLS_ASN1_OCTET_STRING ) ) != 0 )
         return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
 
-    if( ( ret = mbedtls_asn1_get_tag( &p, end, &len, MBEDTLS_ASN1_OCTET_STRING ) ) != 0 )
-        return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
-
-    memcpy( keys->ed25519.secret, p, len );
+    ctx->id = MBEDTLS_ECP_DP_CURVE25519;
+    memcpy( ctx->keys.ed25519.private_, p, len );
     p += len;
 
     if( p != end )
@@ -985,9 +997,9 @@ static int pk_parse_key_eddsa_from_alg( mbedtls_eddsa_keys *keys,
         {
             // CMW: Something magical is going on with the length of the public key examples.
             if (len >= 32)
-                memcpy( keys->ed25519.public_, p + len - 32, 32 );
+                memcpy( ctx->keys.ed25519.public_, p + len - 32, 32 );
             else
-                memcpy( keys->ed25519.public_ + (32 - len), p, 32 );
+                memcpy( ctx->keys.ed25519.public_ + (32 - len), p, 32 );
             p += len;
         }
         else if( ret != MBEDTLS_ERR_ASN1_UNEXPECTED_TAG )
@@ -1000,7 +1012,7 @@ static int pk_parse_key_eddsa_from_alg( mbedtls_eddsa_keys *keys,
         // Verify keys?
         int i, pk_zero = 0;
         for( i = 0; i < 32; i++ )
-            pk_zero |= keys->ed25519.public_[i];
+            pk_zero |= ctx->keys.ed25519.public_[i];
 
         if( version == 1 && pk_zero == 0 )
             return( MBEDTLS_ERR_PK_INVALID_PUBKEY );
@@ -1009,35 +1021,6 @@ static int pk_parse_key_eddsa_from_alg( mbedtls_eddsa_keys *keys,
     return( 0 );
 }
 #endif /* MBEDTLS_EDDSA_C */
-
-static int pk_parse_key_pkcs8_pk_alg( unsigned char **p, unsigned char **end, size_t *len,
-                                      int *version, mbedtls_pk_type_t *pk_alg, mbedtls_asn1_buf *params )
-{
-    int ret;
-
-    if( ( ret = mbedtls_asn1_get_tag( p, *end, len,
-        MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) != 0 )
-    {
-        return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
-    }
-
-    *end = *p + *len;
-
-    if( ( ret = mbedtls_asn1_get_int( p, *end, version ) ) != 0 )
-        return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
-
-    if( ( ret = pk_get_pk_alg( p, *end, pk_alg, params ) ) != 0 )
-        return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
-
-    if( *version != 0
-#ifdef MBEDTLS_EDDSA_C
-        || ( *pk_alg == MBEDTLS_PK_EDDSA && *version != 0 && *version != 1 )
-#endif
-        )
-        return( MBEDTLS_ERR_PK_KEY_INVALID_VERSION + ret );
-
-    return( 0 );
-}
 
 /*
  * Parse an unencrypted PKCS#8 encoded private key
@@ -1081,22 +1064,26 @@ static int pk_parse_key_pkcs8_unencrypted_der(
      *  The PrivateKey OCTET STRING is a SEC1 ECPrivateKey
      */
 
-    if( ( ret = pk_parse_key_pkcs8_pk_alg( &p, &end, &len, &version, &pk_alg, &params ) ) != 0 )
-        return ( ret );
-
-#if defined( MBEDTLS_EDDSA_C )
-    if( pk_alg == MBEDTLS_PK_EDDSA ) {
-        pk_info = mbedtls_pk_info_from_type( MBEDTLS_PK_EDDSA );
-
-        if( ( ret = mbedtls_pk_setup( pk, pk_info ) ) != 0 ||
-            ( ret = pk_parse_key_eddsa_from_alg( &mbedtls_pk_eddsa( *pk )->keys, key, keylen, version ) ) != 0 )
-        {
-            mbedtls_pk_free( pk );
-        }
-        else
-            mbedtls_pk_eddsa( *pk )->id = MBEDTLS_ECP_DP_CURVE25519;
+    if( ( ret = mbedtls_asn1_get_tag( &p, end, &len,
+        MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) != 0 )
+    {
+        return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
     }
+
+    end = p + len;
+
+    if( ( ret = mbedtls_asn1_get_int( &p, end, &version ) ) != 0 )
+        return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
+
+    if( ( ret = pk_get_pk_alg( &p, end, &pk_alg, &params ) ) != 0 )
+        return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
+
+    if( version != 0
+#if defined(MBEDTLS_EDDSA_C)
+        && ( pk_alg != MBEDTLS_PK_EDDSA || version != 1 )
 #endif
+        )
+        return( MBEDTLS_ERR_PK_KEY_INVALID_VERSION + ret );
 
     if( ( ret = mbedtls_asn1_get_tag( &p, end, &len, MBEDTLS_ASN1_OCTET_STRING ) ) != 0 )
         return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
@@ -1132,6 +1119,20 @@ static int pk_parse_key_pkcs8_unencrypted_der(
         }
     } else
 #endif /* MBEDTLS_ECP_C */
+#if defined( MBEDTLS_EDDSA_C )
+    if( pk_alg == MBEDTLS_PK_EDDSA )
+    {
+        if( ( ret = pk_parse_key_eddsa_from_pk( mbedtls_pk_eddsa( *pk ), p, end-p, version ) ) != 0 )
+        {
+            mbedtls_pk_free( pk );
+            return( ret );
+        }
+
+        mbedtls_pk_eddsa( *pk )->id = MBEDTLS_ECP_DP_CURVE25519;
+        return( 0 );
+    }
+    else
+#endif /* MBEDTLS_EDDSA_C */
         return( MBEDTLS_ERR_PK_UNKNOWN_PK_ALG );
 
     return( 0 );

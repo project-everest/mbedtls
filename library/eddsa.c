@@ -27,6 +27,16 @@
 
 #if defined(MBEDTLS_EDDSA_C)
 
+#if defined(MBEDTLS_PLATFORM_C)
+#include "mbedtls/platform.h"
+#else
+#include <stdlib.h>
+#define mbedtls_calloc      calloc
+#define mbedtls_free        free
+#define mbedtls_time_t      time_t
+#define mbedtls_snprintf    snprintf
+#endif
+
 #include "mbedtls/platform_util.h"
 #include "mbedtls/asn1write.h"
 
@@ -42,7 +52,7 @@ void mbedtls_eddsa_init( mbedtls_eddsa_context *ctx )
 
 void mbedtls_eddsa_free( mbedtls_eddsa_context *ctx )
 {
-    mbedtls_platform_zeroize( ctx->keys.ed25519.secret, sizeof( ctx->keys.ed25519.secret ) );
+    mbedtls_platform_zeroize( ctx->keys.ed25519.private_, sizeof( ctx->keys.ed25519.private_ ) );
     mbedtls_platform_zeroize( ctx->keys.ed25519.public_, sizeof( ctx->keys.ed25519.public_ ) );
 }
 
@@ -59,7 +69,7 @@ int mbedtls_eddsa_sign( mbedtls_eddsa_context *ctx,
     ( void )p_rng;
 
     // preconditions of Hacl_Ed25519_sign
-    if( !( sizeof( ctx->keys.ed25519.secret ) == 32 &&
+    if( !( sizeof( ctx->keys.ed25519.private_ ) == 32 &&
            msg_len < 4294967232 /* 2^32 - 64 */ ) )
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 
@@ -68,8 +78,22 @@ int mbedtls_eddsa_sign( mbedtls_eddsa_context *ctx,
         return MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL;
 
     Hacl_Ed25519_sign( sig,
-                       ctx->keys.ed25519.secret,
+                       ctx->keys.ed25519.private_,
                        (unsigned char*) msg, msg_len );
+
+#if defined(MBEDTLS_DEBUG_C)
+    if( 0 )
+    {
+        size_t len;
+        char tmp[1024] = "";
+        mbedtls_eddsa_write_string( msg, msg_len, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "MSG: %s\n", tmp );
+        mbedtls_eddsa_write_string( ctx->keys.ed25519.private_, 32, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "KEY: %s\n", tmp );
+        mbedtls_eddsa_write_string( sig, 64, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "SIG: %s\n", tmp );
+    }
+#endif
 
     return( 0 );
 }
@@ -89,10 +113,27 @@ int mbedtls_eddsa_verify( mbedtls_eddsa_context *ctx,
            msg_len < 4294967232 /* 2^32 - 64 */ ) )
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 
+#if defined(MBEDTLS_DEBUG_C)
+    if( 0 )
+    {
+        size_t len;
+        char tmp[1024] = "";
+        mbedtls_eddsa_write_string( msg, msg_len, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "MSG: %s\n", tmp );
+        mbedtls_eddsa_write_string( ctx->keys.ed25519.public_, 32, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "KEY: %s\n", tmp );
+        mbedtls_eddsa_write_string( sig, 64, tmp, sizeof( tmp ), &len );
+        mbedtls_printf( "SIG: %s\n", tmp );
+    }
+#endif
+
     if( !Hacl_Ed25519_verify( ( unsigned char* )ctx->keys.ed25519.public_,
-                              ( unsigned char* )msg, msg_len,
-                              ( unsigned char* )sig ))
+        ( unsigned char* )msg, msg_len,
+        ( unsigned char* )sig ) )
+    {
+        mbedtls_printf( "Signature verification failed!\n" );
         return MBEDTLS_ERR_ECP_VERIFY_FAILED;
+    }
 
     return( 0 );
 }
@@ -107,19 +148,19 @@ int mbedtls_eddsa_genkey( mbedtls_eddsa_context *ctx, mbedtls_ecp_group_id gid,
 
     ctx->id = gid;
 
-    if( ( ret = f_rng( p_rng, ctx->keys.ed25519.secret, 32 ) ) != 0 )
+    if( ( ret = f_rng( p_rng, ctx->keys.ed25519.private_, 32 ) ) != 0 )
         return ret;
 
     /* See also https://tools.ietf.org/html/rfc8032#section-5.1.5 */
 
     // preconditions of Hacl_Ed25519_secret_to_public_
     if( !( sizeof( ctx->keys.ed25519.public_ ) == 32 &&
-          ( ctx->keys.ed25519.public_ <= ctx->keys.ed25519.secret ||
-            ctx->keys.ed25519.public_ >= ctx->keys.ed25519.secret +
-              sizeof( ctx->keys.ed25519.secret ) ) ) )
+          ( ctx->keys.ed25519.public_ <= ctx->keys.ed25519.private_ ||
+            ctx->keys.ed25519.public_ >= ctx->keys.ed25519.private_ +
+              sizeof( ctx->keys.ed25519.private_ ) ) ) )
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 
-    Hacl_Ed25519_secret_to_public( ctx->keys.ed25519.public_, ctx->keys.ed25519.secret );
+    Hacl_Ed25519_secret_to_public( ctx->keys.ed25519.public_, ctx->keys.ed25519.private_ );
 
     return( 0 );
 }
@@ -185,6 +226,24 @@ int mbedtls_eddsa_read_signature( mbedtls_eddsa_context *ctx,
         return( ret );
 
     return( ret );
+}
+
+int mbedtls_eddsa_write_string( const unsigned char *key, size_t key_size,
+                                char *buf, size_t buflen, size_t *olen )
+{
+    size_t i;
+
+    if( buflen < key_size * 2 + 1 )
+        return MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL;
+
+    for( i = 0; i < key_size; i++ ) {
+        mbedtls_snprintf( buf, 3, "%02X", key[i] );
+        buf += 2;
+    }
+
+    *olen = key_size * 2 + 1;
+
+    return ( 0 );
 }
 
 #endif /* MBEDTLS_EDDSA_C */

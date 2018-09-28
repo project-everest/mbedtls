@@ -274,6 +274,9 @@
 #define MBEDTLS_SSL_SIG_ANON                 0
 #define MBEDTLS_SSL_SIG_RSA                  1
 #define MBEDTLS_SSL_SIG_ECDSA                3
+#if defined(MBEDTLS_EDDSA_C)
+#define MBEDTLS_SSL_SIG_EDDSA                4
+#endif
 
 /*
  * Client Certificate Types

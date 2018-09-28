@@ -7856,6 +7856,7 @@ static int ssl_preset_default_hashes[] = {
 #endif
 
 static int ssl_preset_suiteb_ciphersuites[] = {
+    MBEDTLS_TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     0
@@ -8091,6 +8092,10 @@ unsigned char mbedtls_ssl_sig_from_pk( mbedtls_pk_context *pk )
     if( mbedtls_pk_can_do( pk, MBEDTLS_PK_ECDSA ) )
         return( MBEDTLS_SSL_SIG_ECDSA );
 #endif
+#if defined(MBEDTLS_EDDSA_C)
+    if( mbedtls_pk_can_do( pk, MBEDTLS_PK_EDDSA ) )
+        return( MBEDTLS_SSL_SIG_EDDSA );
+#endif
     return( MBEDTLS_SSL_SIG_ANON );
 }
 
@@ -8102,6 +8107,10 @@ unsigned char mbedtls_ssl_sig_from_pk_alg( mbedtls_pk_type_t type )
         case MBEDTLS_PK_ECDSA:
         case MBEDTLS_PK_ECKEY:
             return( MBEDTLS_SSL_SIG_ECDSA );
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_PK_EDDSA:
+            return( MBEDTLS_SSL_SIG_EDDSA );
+#endif
         default:
             return( MBEDTLS_SSL_SIG_ANON );
     }
@@ -8119,11 +8128,15 @@ mbedtls_pk_type_t mbedtls_ssl_pk_alg_from_sig( unsigned char sig )
         case MBEDTLS_SSL_SIG_ECDSA:
             return( MBEDTLS_PK_ECDSA );
 #endif
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_SSL_SIG_EDDSA:
+            return( MBEDTLS_PK_EDDSA );
+#endif
         default:
             return( MBEDTLS_PK_NONE );
     }
 }
-#endif /* MBEDTLS_PK_C && ( MBEDTLS_RSA_C || MBEDTLS_ECDSA_C ) */
+#endif /* MBEDTLS_PK_C && ( MBEDTLS_RSA_C || MBEDTLS_ECDSA_C || MBEDTLS_EDDSA_C ) */
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2) && \
     defined(MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED)
@@ -8137,6 +8150,9 @@ mbedtls_md_type_t mbedtls_ssl_sig_hash_set_find( mbedtls_ssl_sig_hash_set_t *set
         case MBEDTLS_PK_RSA:
             return( set->rsa );
         case MBEDTLS_PK_ECDSA:
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_PK_EDDSA:
+#endif
             return( set->ecdsa );
         default:
             return( MBEDTLS_MD_NONE );
@@ -8317,6 +8333,9 @@ int mbedtls_ssl_check_cert_usage( const mbedtls_x509_crt *cert,
             case MBEDTLS_KEY_EXCHANGE_DHE_RSA:
             case MBEDTLS_KEY_EXCHANGE_ECDHE_RSA:
             case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
+#if defined(MBEDTLS_EDDSA_C)
+            case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
+#endif
                 usage = MBEDTLS_X509_KU_DIGITAL_SIGNATURE;
                 break;
 

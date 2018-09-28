@@ -34,7 +34,7 @@
 #define MBEDTLS_EDDSA_MAX_LEN 64
 
 typedef struct {
-    unsigned char secret[32];
+    unsigned char private_[32];
     unsigned char public_[32];
 } mbedtls_ed25519_keys;
 
@@ -170,6 +170,19 @@ int mbedtls_eddsa_write_signature( mbedtls_eddsa_context *ctx,
 int mbedtls_eddsa_read_signature( mbedtls_eddsa_context *ctx,
                                   const unsigned char *msg, size_t msg_len,
                                   const unsigned char *sig, size_t sig_len );
+
+/** \brief           This function writes an EdDSA key to a buffer
+ *
+ * \param key        The key.
+ * \param key_size   Size/length of the key.
+ * \param buf        The buffer to write to.
+ * \param buflen     The size of \p buf.
+ * \param olen       The number of characters written to buf.
+ *
+ * \return           \c 0 on success.
+ */
+int mbedtls_eddsa_write_string( const unsigned char *key, size_t key_size,
+                                char *buf, size_t buflen, size_t *olen );
 
 #ifdef __cplusplus
 }
