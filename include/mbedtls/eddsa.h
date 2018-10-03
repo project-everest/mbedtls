@@ -74,10 +74,9 @@ void mbedtls_eddsa_free( mbedtls_eddsa_context *ctx );
 /**
  * \brief           This function computes an EdDSA signature.
  *
- * \param grp       The ECP group.
+ * \param ctx       The EdDSA context.
  * \param sig       The signature.
  * \param max_sig_len The maximum length of \p sig.
- * \param key       The private signing key.
  * \param msg       The message to sign.
  * \param msg_len   The length of \p msg.
  * \param f_rng     The RNG function.
@@ -95,7 +94,7 @@ int mbedtls_eddsa_sign( mbedtls_eddsa_context *ctx,
 /**
  * \brief           This function verifies an EdDSA signature.
  *
- * \param grp       The ECP group.
+ * \param ctx       The EdDSA context.
  * \param msg       The message.
  * \param msg_len   The length of \p msg.
  * \param sig       The signature to verify.
