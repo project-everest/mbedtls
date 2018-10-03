@@ -528,6 +528,7 @@ const mbedtls_pk_info_t mbedtls_rsa_alt_info = {
 #if defined(MBEDTLS_EDDSA_C)
 static size_t eddsa_get_bitlen( const void *ctx )
 {
+    ( void )ctx;
     return( 256 );
 }
 
@@ -565,8 +566,10 @@ static int eddsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 
 static int eddsa_check_pair( const void *pub, const void *prv )
 {
-    printf("EdDSA check pair unexpected; check me.");
-    return( 0 );
+    ( void )pub;
+    ( void )prv;
+    printf("EdDSA check pair not implemented yet.");
+    return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 }
 
 static void *eddsa_alloc_wrap( void )

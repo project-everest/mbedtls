@@ -57,6 +57,9 @@ static const int ciphersuite_preference[] =
 #if defined(MBEDTLS_SSL_CIPHERSUITES)
     MBEDTLS_SSL_CIPHERSUITES,
 #else
+    /* Experimental */
+    MBEDTLS_TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256,
+
     /* Chacha-Poly ephemeral suites */
     MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
@@ -93,9 +96,6 @@ static const int ciphersuite_preference[] =
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384,
     MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384,
     MBEDTLS_TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384,
-
-    /* Experimental */
-    MBEDTLS_TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256,
 
     /* All AES-128 ephemeral suites */
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
@@ -2302,8 +2302,10 @@ mbedtls_pk_type_t mbedtls_ssl_get_ciphersuite_sig_pk_alg( const mbedtls_ssl_ciph
         case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
             return( MBEDTLS_PK_ECDSA );
 
+#if defined(MBEDTLS_EDDSA_C)
         case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
             return( MBEDTLS_PK_EDDSA );
+#endif
 
         case MBEDTLS_KEY_EXCHANGE_ECDH_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
@@ -2326,8 +2328,10 @@ mbedtls_pk_type_t mbedtls_ssl_get_ciphersuite_sig_alg( const mbedtls_ssl_ciphers
         case MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA:
             return( MBEDTLS_PK_ECDSA );
 
+#if defined(MBEDTLS_EDDSA_C)
         case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
             return( MBEDTLS_PK_EDDSA );
+#endif
 
         default:
             return( MBEDTLS_PK_NONE );

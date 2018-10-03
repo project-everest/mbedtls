@@ -323,8 +323,11 @@ int mbedtls_x509write_crt_der( mbedtls_x509write_cert *ctx, unsigned char *buf, 
     else if( mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_ECDSA ) )
         pk_alg = MBEDTLS_PK_ECDSA;
 #if defined(MBEDTLS_EDDSA_C)
-    else if( mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_EDDSA ) )
+    else if( mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_EDDSA ) ) {
         pk_alg = MBEDTLS_PK_EDDSA;
+        if( ctx->md_alg != MBEDTLS_MD_SHA512 )
+            return MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE;
+    }
 #endif
     else
         return( MBEDTLS_ERR_X509_INVALID_ALG );

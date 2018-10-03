@@ -444,7 +444,11 @@ static const oid_pk_alg_t oid_pk_alg[] =
     },
 #if defined(MBEDTLS_EDDSA_C)
     {
-        { ADD_LEN( MBEDTLS_OID_EC_GRP_ED25519 ),       "id-EdDSA",         "EC key for EdDSA" },
+        { ADD_LEN( MBEDTLS_OID_EC_GRP_X25519 ),        "id-X25519",        "X25519 key" },
+        MBEDTLS_PK_EDDSA,
+    },
+    {
+        { ADD_LEN( MBEDTLS_OID_EC_GRP_ED25519 ),       "id-Ed25519",       "Ed25519 key" },
         MBEDTLS_PK_EDDSA,
     },
 #endif /* MBEDTLS_EDDSA_C */
@@ -537,7 +541,7 @@ static const oid_ecp_grp_t oid_ecp_grp[] =
 #endif /* MBEDTLS_ECP_DP_BP512R1_ENABLED */
 #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
     {
-        { ADD_LEN( MBEDTLS_OID_EC_GRP_CURVE25519 ),    "curve25519",    "curve25519" },
+        { ADD_LEN( MBEDTLS_OID_EC_GRP_X25519 ),    "curve25519",    "curve25519" },
         MBEDTLS_ECP_DP_CURVE25519,
     },
 #endif /* MBEDTLS_ECP_DP_CURVE25519_ENABLED */

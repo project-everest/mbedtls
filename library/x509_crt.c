@@ -215,6 +215,16 @@ static int x509_profile_check_key( const mbedtls_x509_crt_profile *profile,
     }
 #endif
 
+#if defined(MBEDTLS_EDDSA_C)
+    if( pk_alg == MBEDTLS_PK_EDDSA )
+    {
+        const mbedtls_ecp_group_id gid = mbedtls_pk_eddsa( *pk )->id;
+        if( ( profile->allowed_curves & MBEDTLS_X509_ID_FLAG( gid ) ) != 0 )
+            return( 0 );
+        return( -1 );
+    }
+#endif
+
     return( -1 );
 }
 
@@ -1445,6 +1455,16 @@ int mbedtls_x509_crt_info( char *buf, size_t size, const char *prefix,
     ret = mbedtls_snprintf( p, n, "\n%s%-" BC "s: %d bits", prefix, key_size_str,
                           (int) mbedtls_pk_get_bitlen( &crt->pk ) );
     MBEDTLS_X509_SAFE_SNPRINTF;
+
+
+#if defined(MBEDTLS_EDDSA_C)
+    if( 0 ) {
+        ret = mbedtls_snprintf( p, n, "\n%spublic key        : ", prefix );
+        MBEDTLS_X509_SAFE_SNPRINTF;
+        mbedtls_eddsa_write_string( mbedtls_pk_eddsa( crt->pk )->keys.ed25519.public_, 32, p, n, ( size_t* )&ret );
+        MBEDTLS_X509_SAFE_SNPRINTF;
+    }
+#endif
 
     /*
      * Optional extensions
