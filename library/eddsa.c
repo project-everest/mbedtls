@@ -131,7 +131,6 @@ int mbedtls_eddsa_verify( mbedtls_eddsa_context *ctx,
         ( unsigned char* )msg, msg_len,
         ( unsigned char* )sig ) )
     {
-        mbedtls_printf( "Signature verification failed!\n" );
         return MBEDTLS_ERR_ECP_VERIFY_FAILED;
     }
 
