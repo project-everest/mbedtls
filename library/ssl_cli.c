@@ -1996,8 +1996,6 @@ static int ssl_check_server_ecdh_params( const mbedtls_ssl_context *ssl )
 #endif
         return( -1 );
 
-    MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Qp", ssl->handshake->ecdh_ctx.ctx.x25519.peer_point, 32 );
-
     return( 0 );
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -2841,7 +2839,6 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
             return( ret );
         }
 
-        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Peer: ", ssl->handshake->ecdh_ctx.ctx.x25519.peer_point, 32 );
 
         if( ( ret = mbedtls_ecdhopt_shared_secret( &ssl->handshake->ecdh_ctx,
                                       &ssl->handshake->pmslen,
@@ -2853,7 +2850,6 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
             return( ret );
         }
 
-        MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Secret: ", ssl->handshake->ecdh_ctx.ctx.x25519.our_secret, 32 );
     }
     else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
@@ -2948,7 +2944,6 @@ static int ssl_write_client_key_exchange( mbedtls_ssl_context *ssl )
                 return( ret );
             }
 
-            MBEDTLS_SSL_DEBUG_ECPC( 3, "ECDH: Peer: ", ssl->handshake->ecdh_ctx.ctx.x25519.peer_point, 32 );
         }
         else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */
