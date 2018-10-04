@@ -66,6 +66,17 @@ set(src_crypto
     xtea.c
 )
 
+set(src_everest
+    everest/everest.c
+    everest/Hacl_Curve25519.c
+    everest/x25519.c
+    everest/kremlib/FStar_UInt64.c
+    everest/kremlib/c/fstar_uint64.c
+    everest/kremlib/c/fstar_uint128.c
+)
+
+set(src_crypto ${src_crypto} ${src_everest})
+
 set(src_x509
     certs.c
     pkcs11.c
