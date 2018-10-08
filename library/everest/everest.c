@@ -24,9 +24,18 @@
   *  This file is part of Mbed TLS (https://tls.mbed.org).
   */
 
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
+
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+
 #include <string.h>
 
 #include "mbedtls/ecdh.h"
+#include "mbedtls/gcm.h"
 
 #include "everest/x25519.h"
 #include "everest/everest.h"
@@ -37,6 +46,8 @@
 #define mbedtls_calloc calloc
 #define mbedtls_free   free
 #endif
+
+#include "mbedtls/platform_util.h"
 
 int mbedtls_everest_setup( mbedtls_ecdh_context *ctx, int grp )
 {
@@ -148,3 +159,74 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
     if( ctx->var != MBEDTLS_ECDH_VARIANT_EVEREST ) return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
     return mbedtls_x25519_calc_secret( x25519_ctx, olen, buf, blen, f_rng, p_rng );
 }
+
+
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
+
+void mbedtls_everest_aes_gcm_wipe_key( mbedtls_gcm_context *ctx )
+{
+    everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.cipher_ctx;
+
+    if( args && args->expanded_key_ptr )
+    {
+        switch( ctx->cipher_ctx.cipher_info->type )
+        {
+        case MBEDTLS_CIPHER_AES_128_GCM: mbedtls_platform_zeroize( args->expanded_key_ptr, 11 * 128 / 8 ); break;
+        case MBEDTLS_CIPHER_AES_256_GCM: mbedtls_platform_zeroize( args->expanded_key_ptr, 15 * 128 / 8 ); break;
+        default: break;
+        }
+        mbedtls_free( args->expanded_key_ptr );
+        args->expanded_key_ptr = NULL;
+    }
+}
+int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
+                                    const unsigned char *key, unsigned int keybits )
+{
+    everest_aes_gcm_args * args;
+
+    mbedtls_everest_aes_gcm_wipe_key( ctx );
+
+    switch( ctx->cipher_ctx.cipher_info->type )
+    {
+    case MBEDTLS_CIPHER_AES_128_GCM:
+        if( keybits != 128 )
+            return ( MBEDTLS_ERR_GCM_BAD_INPUT );
+        args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
+        args->expanded_key_ptr = ( everest_byte * )mbedtls_calloc( 1, 11 * 128 / 8 );
+        aes128_key_expansion( ( everest_byte * )key, args->expanded_key_ptr );
+        break;
+    case MBEDTLS_CIPHER_AES_256_GCM:
+        if( keybits != 256 )
+            return ( MBEDTLS_ERR_GCM_BAD_INPUT );
+        args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
+        args->expanded_key_ptr = ( everest_byte * )mbedtls_calloc( 1, 15 * 128 / 8 );
+        aes256_key_expansion( ( everest_byte * )key, args->expanded_key_ptr );
+        break;
+    default:
+        return( MBEDTLS_ERR_GCM_BAD_INPUT );
+    }
+
+    ctx->cipher_ctx.cipher_ctx = args;
+
+    return( 0 );
+}
+
+int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx )
+{
+    if( ctx->cipher_ctx.cipher_info != NULL &&
+        ctx->cipher_ctx.cipher_ctx != NULL &&
+        ( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_GCM ||
+          ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_GCM ) )
+    {
+        mbedtls_everest_aes_gcm_wipe_key( ctx );
+        mbedtls_platform_zeroize( ctx->cipher_ctx.cipher_ctx, sizeof( everest_aes_gcm_args ) );
+        mbedtls_free( ctx->cipher_ctx.cipher_ctx );
+        ctx->cipher_ctx.cipher_ctx = NULL;
+    }
+
+    return( 0 );
+}
+
+#endif /* MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM */
+
+#endif /* MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED */

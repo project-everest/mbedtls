@@ -501,15 +501,30 @@ int main( int argc, char *argv[] )
         mbedtls_gcm_init( &gcm );
         for( keysize = 128; keysize <= 256; keysize += 64 )
         {
-            mbedtls_snprintf( title, sizeof( title ), "AES-GCM-%d", keysize );
+            unsigned char ciphertxt[BUFSIZE], tag[BUFSIZE], decrypted[BUFSIZE];
 
-            memset( buf, 0, sizeof( buf ) );
-            memset( tmp, 0, sizeof( tmp ) );
+            myrand( NULL, buf, sizeof( buf ) );
+            myrand( NULL, tmp, sizeof( tmp ) );
+
             mbedtls_gcm_setkey( &gcm, MBEDTLS_CIPHER_ID_AES, tmp, keysize );
 
+            mbedtls_snprintf( title, sizeof( title ), "AES-GCM-%d encrypt", keysize );
             TIME_AND_TSC( title,
                     mbedtls_gcm_crypt_and_tag( &gcm, MBEDTLS_GCM_ENCRYPT, BUFSIZE, tmp,
-                        12, NULL, 0, buf, buf, 16, tmp ) );
+                        12, NULL, 0, buf, ciphertxt, 16, tag ) );
+
+            mbedtls_snprintf( title, sizeof( title ), "AES-GCM-%d decrypt", keysize );
+            TIME_AND_TSC( title,
+                mbedtls_gcm_crypt_and_tag( &gcm, MBEDTLS_GCM_DECRYPT, BUFSIZE, tmp,
+                    12, NULL, 0, ciphertxt, decrypted, 16, tag ) );
+
+            for( i = 0; i < 256; i++ )
+            {
+                if( decrypted[i] != buf[i] ) {
+                    mbedtls_printf( "Decryption error!" );
+                    return 1;
+                }
+            }
 
             mbedtls_gcm_free( &gcm );
         }
