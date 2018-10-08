@@ -3,7 +3,7 @@ option(INSTALL_MBEDTLS_HEADERS "Install mbed TLS headers." ON)
 if(INSTALL_MBEDTLS_HEADERS)
 
     file(GLOB headers "mbedtls/*.h")
-    file(GLOB headers_everest "everest/*.h")
+    file(GLOB headers_everest "../3rdparty/everest/include/*.h")
 
     install(FILES ${headers} ${headers_everest}
         DESTINATION include/mbedtls

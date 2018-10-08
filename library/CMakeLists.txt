@@ -67,12 +67,12 @@ set(src_crypto
 )
 
 set(src_everest
-    everest/everest.c
-    everest/Hacl_Curve25519.c
-    everest/x25519.c
-    everest/kremlib/FStar_UInt64.c
-    everest/kremlib/c/fstar_uint64.c
-    everest/kremlib/c/fstar_uint128.c
+    ../3rdparty/everest/library/everest.c
+    ../3rdparty/everest/library/Hacl_Curve25519.c
+    ../3rdparty/everest/library/x25519.c
+    ../3rdparty/everest/library/kremlib/FStar_UInt64.c
+    ../3rdparty/everest/library/kremlib/c/fstar_uint64.c
+    ../3rdparty/everest/library/kremlib/c/fstar_uint128.c
 )
 
 set(src_crypto ${src_crypto} ${src_everest})
