@@ -3187,14 +3187,23 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
- /**
-  * \def MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
-  *
-  * Enable the verified implementations of crypto primitives
-  * from Project Everest (currently only x25519).
-  *
-  */
+/**
+ * \def MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
+ *
+ * Enable the verified implementations of crypto primitives
+ * from Project Everest (currently only x25519).
+ *
+ */
 #define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
+
+/**
+ * \def MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM
+ *
+ * Enable the verified implementation of AES-GCM from Project Everest.
+ * Not supported (and automatically disabled) for non-x64 Windows builds.
+ *
+ */
+#define MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM
 
 #include "check_config.h"
 
