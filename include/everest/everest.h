@@ -28,6 +28,8 @@
 #ifndef MBEDTLS_EVEREST_H
 #define MBEDTLS_EVEREST_H
 
+#include "mbedtls/ecp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -226,6 +228,40 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
                                  unsigned char *buf, size_t blen,
                                  int( *f_rng )( void *, unsigned char *, size_t ),
                                  void *p_rng );
+
+
+/* Everest AES-GCM  */
+
+typedef unsigned char everest_byte;
+
+typedef struct
+{
+    everest_byte *plain_ptr;
+    uint64_t plain_num_bytes;
+    everest_byte *auth_ptr;
+    uint64_t auth_num_bytes;
+    everest_byte *iv_ptr;
+    everest_byte *expanded_key_ptr;
+    everest_byte *out_ptr;
+    everest_byte *tag_ptr;
+} everest_aes_gcm_args;
+
+extern void aes128_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
+extern void gcm128_encrypt( everest_aes_gcm_args *a );
+extern int gcm128_decrypt( everest_aes_gcm_args *a );
+
+extern void aes256_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
+extern void gcm256_encrypt( everest_aes_gcm_args *a );
+extern int gcm256_decrypt( everest_aes_gcm_args *a );
+
+struct mbedtls_gcm_context;
+typedef struct mbedtls_gcm_context mbedtls_gcm_context;
+
+int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
+                                    const unsigned char *key,
+                                    unsigned int keybits );
+
+int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx);
 
 #ifdef __cplusplus
 }
