@@ -87,7 +87,7 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		ripemd160.o	rsa_internal.o	rsa.o  		\
 		sha1.o		sha256.o	sha512.o	\
 		threading.o	timing.o	version.o	\
-		version_features.o		xtea.o 
+		version_features.o		xtea.o
 
 OBJS_CRYPTO+= \
 		../3rdparty/everest/library/everest.o \

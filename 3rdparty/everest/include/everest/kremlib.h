@@ -15,7 +15,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  This file is part of Mbed TLS (https://tls.mbed.org) and 
+ *  This file is part of Mbed TLS (https://tls.mbed.org) and
  *  originated from Project Everest (https://project-everest.github.io/)
  */
 
