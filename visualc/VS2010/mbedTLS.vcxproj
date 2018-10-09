@@ -230,7 +230,7 @@
     <ClCompile Include="..\..\3rdparty\everest\library\everest.c" />
     <ClCompile Include="..\..\3rdparty\everest\library\Hacl_Curve25519.c" />
     <ClCompile Include="..\..\3rdparty\everest\library\kremlib\FStar_UInt128.c" />
-    <ClCompile Include="..\..\3rdparty\everest\library\kremlib\FStar_UInt64.c" />
+    <ClCompile Include="..\..\3rdparty\everest\library\kremlib\FStar_UInt64_FStar_UInt32_FStar_UInt16_FStar_UInt8.c" />
     <ClCompile Include="..\..\3rdparty\everest\library\x25519.c" />
     <ClCompile Include="..\..\library\aes.c" />
     <ClCompile Include="..\..\library\aesni.c" />

@@ -9,6 +9,8 @@
 
 
 #include "FStar_UInt128.h"
+#include "kremlin/c_endianness.h"
+#include "FStar_UInt64_FStar_UInt32_FStar_UInt16_FStar_UInt8.h"
 
 uint64_t FStar_UInt128___proj__Mkuint128__item__low(FStar_UInt128_uint128 projectee)
 {
