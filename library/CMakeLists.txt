@@ -77,7 +77,18 @@ set(src_everest
     everest/kremlib/c/fstar_uint128.c
 )
 
-set(src_crypto ${src_crypto} ${src_everest})
+enable_language(ASM)
+if(CMAKE_COMPILER_IS_MSVC)
+set(src_aesgcm_everest everest/aesgcm.asm)
+elseif(WIN32)
+set(src_aesgcm_everest everest/aesgcm-gcc.S)
+elseif(APPLE)
+set(src_aesgcm_everest everest/aesgcm-osx.S)
+else(CMAKE_COMPILER_IS_MSVC)
+set(src_aesgcm_everest everest/aesgcm-linux.S)
+endif(CMAKE_COMPILER_IS_MSVC)
+
+set(src_crypto ${src_crypto} ${src_everest} ${src_aesgcm_everest})
 
 set(src_x509
     certs.c
