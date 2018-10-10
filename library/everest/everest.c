@@ -161,6 +161,8 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
 }
 
 
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
+
 int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
                                     const unsigned char *key, unsigned int keybits )
 {
@@ -221,5 +223,7 @@ int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx )
 
     return( 0 );
 }
+
+#endif /* MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM */
 
 #endif /* MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED */

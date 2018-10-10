@@ -169,7 +169,7 @@ int mbedtls_gcm_setkey( mbedtls_gcm_context *ctx,
     int ret;
     const mbedtls_cipher_info_t *cipher_info;
 
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
     if( cipher == MBEDTLS_CIPHER_ID_AES && ( keybits == 128 || keybits == 256 ) )
     {
         cipher_info = mbedtls_cipher_info_from_values( cipher, keybits, MBEDTLS_MODE_GCM );
@@ -477,7 +477,7 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
     size_t tag_len,
     unsigned char *tag )
 {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
     if( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_GCM ||
         ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_GCM )
     {
@@ -577,7 +577,7 @@ int mbedtls_gcm_auth_decrypt( mbedtls_gcm_context *ctx,
 
 void mbedtls_gcm_free( mbedtls_gcm_context *ctx )
 {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
     mbedtls_everest_aes_gcm_free( ctx );
 #endif
 
