@@ -1,4 +1,3 @@
-
 # Also see "include/mbedtls/config.h"
 
 CFLAGS	?= -O2
@@ -94,11 +93,12 @@ OBJS_CRYPTO+= everest/everest.o \
 		everest/Hacl_Curve25519.o everest/x25519.o \
 		everest/Hacl_Ed25519.o  \
 		everest/kremlib/FStar_UInt64.o everest/kremlib/c/fstar_uint64.o \
-		everest/kremlib/c/fstar_uint128.o \
+		everest/kremlib/c/fstar_uint128.o
+
 ifdef APPLE_BUILD
-		everest/aesgcm-osx.o
+OBJS_CRYPTO+=everest/aesgcm-osx.o
 else
-		everest/aesgcm-linux.o
+OBJS_CRYPTO+=everest/aesgcm-linux.o
 endif
 
 OBJS_X509=	certs.o		pkcs11.o	x509.o		\
