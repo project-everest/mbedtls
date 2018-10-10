@@ -3126,6 +3126,13 @@
   */
 #define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
 
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED) && \
+    (!defined( _MSC_VER ) || defined( _M_X64 ))
+#define MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM
+#else
+#undef MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM
+#endif
+
 #include "check_config.h"
 
 #endif /* MBEDTLS_CONFIG_H */

@@ -28,6 +28,8 @@
 #ifndef MBEDTLS_EVEREST_H
 #define MBEDTLS_EVEREST_H
 
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+
 #include "mbedtls/ecp.h"
 
 #ifdef __cplusplus
@@ -230,6 +232,8 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
                                  void *p_rng );
 
 
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
+
 /* Everest AES-GCM  */
 
 typedef unsigned char everest_byte;
@@ -263,8 +267,12 @@ int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
 
 int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx);
 
+#endif
+
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED */
 
 #endif /* MBEDTLS_EVEREST_H */
