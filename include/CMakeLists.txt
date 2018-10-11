@@ -3,11 +3,16 @@ option(INSTALL_MBEDTLS_HEADERS "Install mbed TLS headers." ON)
 if(INSTALL_MBEDTLS_HEADERS)
 
     file(GLOB headers "mbedtls/*.h")
-    file(GLOB headers_everest "everest/*.h")
 
-    install(FILES ${headers} ${headers_everest}
+    install(FILES ${headers}
         DESTINATION include/mbedtls
         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
+    install(DIRECTORY everest/
+        DESTINATION include/everest
+        FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        FILES_MATCHING PATTERN "*.h")
 
 endif(INSTALL_MBEDTLS_HEADERS)
 
