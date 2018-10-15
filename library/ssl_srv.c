@@ -277,7 +277,7 @@ static int ssl_parse_signature_algorithms_ext( mbedtls_ssl_context *ssl,
           MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED */
 
 #if defined(MBEDTLS_ECDH_C) || defined(MBEDTLS_ECDSA_C) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED) || defined(MBEDTLS_EDDSA_C)
 static int ssl_parse_supported_elliptic_curves( mbedtls_ssl_context *ssl,
                                                 const unsigned char *buf,
                                                 size_t len )
@@ -675,12 +675,14 @@ static int ssl_parse_alpn_ext( mbedtls_ssl_context *ssl,
 /*
  * Return 0 if the given key uses one of the acceptable curves, -1 otherwise
  */
-#if defined(MBEDTLS_ECDSA_C)
-static int ssl_check_key_curve( mbedtls_pk_context *pk,
+#if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_EDDSA_C)
+static int ssl_check_key_curve( mbedtls_ecp_group_id grp_id,
                                 const mbedtls_ecp_curve_info **curves )
 {
     const mbedtls_ecp_curve_info **crv = curves;
-    mbedtls_ecp_group_id grp_id = mbedtls_pk_ec( *pk )->grp.id;
+
+    if( crv == NULL )
+        return( -1 );
 
     while( *crv != NULL )
     {
@@ -691,7 +693,7 @@ static int ssl_check_key_curve( mbedtls_pk_context *pk,
 
     return( -1 );
 }
-#endif /* MBEDTLS_ECDSA_C */
+#endif /* defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_EDDSA_C) */
 
 /*
  * Try picking a certificate for this ciphersuite,
@@ -750,14 +752,21 @@ static int ssl_pick_cert( mbedtls_ssl_context *ssl,
             continue;
         }
 
+        if(
 #if defined(MBEDTLS_ECDSA_C)
-        if( pk_alg == MBEDTLS_PK_ECDSA &&
-            ssl_check_key_curve( &cur->cert->pk, ssl->handshake->curves ) != 0 )
+            ( pk_alg == MBEDTLS_PK_ECDSA &&
+                ssl_check_key_curve( mbedtls_pk_ec( cur->cert->pk )->grp.id, ssl->handshake->curves ) ) != 0 ||
+#endif
+#if defined(MBEDTLS_EDDSA_C)
+            ( pk_alg == MBEDTLS_PK_EDDSA &&
+                ssl_check_key_curve( mbedtls_pk_eddsa( cur->cert->pk )->id, ssl->handshake->curves ) ) != 0 ||
+#endif
+            0
+            )
         {
             MBEDTLS_SSL_DEBUG_MSG( 3, ( "certificate mismatch: elliptic curve" ) );
             continue;
         }
-#endif
 
         /*
          * Try to select a SHA-1 certificate for pre-1.2 clients, but still
@@ -1733,7 +1742,7 @@ read_record_header:
           MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED */
 
 #if defined(MBEDTLS_ECDH_C) || defined(MBEDTLS_ECDSA_C) || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED) || defined(MBEDTLS_EDDSA_C)
             case MBEDTLS_TLS_EXT_SUPPORTED_ELLIPTIC_CURVES:
                 MBEDTLS_SSL_DEBUG_MSG( 3, ( "found supported elliptic curves extension" ) );
 
@@ -1751,7 +1760,7 @@ read_record_header:
                     return( ret );
                 break;
 #endif /* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C ||
-          MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED */
+          MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED || defined(MBEDTLS_EDDSA_C) */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
             case MBEDTLS_TLS_EXT_ECJPAKE_KKPP:

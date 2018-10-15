@@ -87,7 +87,7 @@ typedef enum
  *
  * \note Montgomery curves are currently excluded.
  */
-#define MBEDTLS_ECP_DP_MAX     12
+#define MBEDTLS_ECP_DP_MAX     15
 
 /**
  * Curve information, for use by other modules.

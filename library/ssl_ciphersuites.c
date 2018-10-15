@@ -2352,6 +2352,9 @@ int mbedtls_ssl_ciphersuite_uses_ec( const mbedtls_ssl_ciphersuite_t *info )
         case MBEDTLS_KEY_EXCHANGE_ECDH_RSA:
         case MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA:
         case MBEDTLS_KEY_EXCHANGE_ECJPAKE:
+#if defined(MBEDTLS_EDDSA_C)
+        case MBEDTLS_KEY_EXCHANGE_ECDHE_EDDSA:
+#endif
             return( 1 );
 
         default:
