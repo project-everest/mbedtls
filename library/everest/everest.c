@@ -190,6 +190,7 @@ void mbedtls_everest_aes_gcm_wipe_key( mbedtls_gcm_context *ctx )
         args->vale_args.expanded_key_ptr = NULL;
     }
 }
+
 int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
                                     const unsigned char *key, unsigned int keybits )
 {

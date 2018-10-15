@@ -395,7 +395,7 @@ int mbedtls_x509write_crt_der( mbedtls_x509write_cert *ctx, unsigned char *buf, 
      */
 #if defined(MBEDTLS_EDDSA_C)
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, tmp_buf, sig_oid, strlen( sig_oid ), 0,
-                                    !mbedtls_pk_can_do( ctx->issuer_key, MBEDTLS_PK_EDDSA )) );
+                                    !mbedtls_pk_can_do( ctx->subject_key, MBEDTLS_PK_EDDSA )) );
 #else
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, tmp_buf, sig_oid, strlen( sig_oid ), 0, 1 ) );
 #endif /* MBEDTLS_EDDSA_C */
