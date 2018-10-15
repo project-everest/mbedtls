@@ -1008,13 +1008,9 @@ static int pk_parse_key_eddsa_from_pk( mbedtls_eddsa_context *ctx,
         }
     }
 
+    if( version == 1)
     {
-        // Verify keys?
-        int i, pk_zero = 0;
-        for( i = 0; i < 32; i++ )
-            pk_zero |= ctx->keys.ed25519.public_[i];
-
-        if( version == 1 && pk_zero == 0 )
+        if( mbedtls_eddsa_check_pub_priv( ctx, ctx ) != 0 )
             return( MBEDTLS_ERR_PK_INVALID_PUBKEY );
     }
 
