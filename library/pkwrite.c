@@ -211,16 +211,10 @@ int mbedtls_pk_write_pubkey_der( mbedtls_pk_context *key, unsigned char *buf, si
     {
         MBEDTLS_ASN1_CHK_ADD( par_len, pk_write_ec_param( &c, buf, mbedtls_pk_ec( *key ) ) );
     }
-    else
 #endif
-#if defined(MBEDTLS_EDDSA_C)
-    if( mbedtls_pk_get_type( key ) == MBEDTLS_PK_ECKEY )
-    {
-        MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, buf, oid, oid_len, par_len, !mbedtls_pk_can_do( key, MBEDTLS_PK_EDDSA ) ) );
-    }
-    else
-#endif /* #if defined(MBEDTLS_EDDSA_C) */
-    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, buf, oid, oid_len, par_len, 1 ) );
+
+    MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_algorithm_identifier( &c, buf, oid, oid_len,
+                                        par_len, !mbedtls_pk_can_do( key, MBEDTLS_PK_EDDSA ) ) );
 
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &c, buf, len ) );
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &c, buf, MBEDTLS_ASN1_CONSTRUCTED |

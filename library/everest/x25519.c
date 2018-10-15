@@ -133,7 +133,7 @@ int mbedtls_x25519_calc_secret( mbedtls_x25519_context *ctx, size_t *olen,
     if( blen < *olen )
         return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, ctx->peer_point);
+    Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, ctx->peer_point );
 
     /* Wipe the DH secret and don't let the peer chose a small subgroup point */
     memset( ctx->our_secret, 0, 32 );
