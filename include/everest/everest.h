@@ -238,8 +238,7 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
 
 typedef unsigned char everest_byte;
 
-typedef struct
-{
+typedef struct {
     everest_byte *plain_ptr;
     uint64_t plain_num_bytes;
     everest_byte *auth_ptr;
@@ -248,15 +247,28 @@ typedef struct
     everest_byte *expanded_key_ptr;
     everest_byte *out_ptr;
     everest_byte *tag_ptr;
+} vale_args_t;
+
+typedef struct
+{
+    vale_args_t vale_args;
+
+    size_t plain_ptr_size;
+    size_t auth_ptr_size;
+    size_t iv_ptr_size;
+    size_t out_ptr_size;
+    size_t tag_ptr_size;
 } everest_aes_gcm_args;
 
+void everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize );
+
 extern void aes128_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
-extern void gcm128_encrypt( everest_aes_gcm_args *a );
-extern int gcm128_decrypt( everest_aes_gcm_args *a );
+extern void gcm128_encrypt( vale_args_t *a );
+extern int gcm128_decrypt( vale_args_t *a );
 
 extern void aes256_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
-extern void gcm256_encrypt( everest_aes_gcm_args *a );
-extern int gcm256_decrypt( everest_aes_gcm_args *a );
+extern void gcm256_encrypt( vale_args_t *a );
+extern int gcm256_decrypt( vale_args_t *a );
 
 struct mbedtls_gcm_context;
 typedef struct mbedtls_gcm_context mbedtls_gcm_context;
