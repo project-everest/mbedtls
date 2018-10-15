@@ -128,6 +128,20 @@ int mbedtls_eddsa_genkey( mbedtls_eddsa_context *ctx, mbedtls_ecp_group_id gid,
                           int( *f_rng )( void *, unsigned char *, size_t ), void *p_rng );
 
 /**
+ * \brief           This function checks that the keypair objects
+ *                  \p pub and \p prv have the same group and the
+ *                  same public point, and that the private key in
+ *                  \p prv is consistent with the public key.
+ *
+ * \param pub       The context holding the public key
+ * \param prv       The context holding the private key
+ *
+ * \return          \c 0 on success, meaning that the keys are valid and match.
+ * \return          #MBEDTLS_ERR_ECP_BAD_INPUT_DATA if the keys are invalid or do not match.
+ */
+int mbedtls_eddsa_check_pub_priv( mbedtls_eddsa_context *pub, mbedtls_eddsa_context *prv );
+
+/**
  * \brief           This function computes the EdDSA signature and writes it
  *                  to a buffer.
  *
