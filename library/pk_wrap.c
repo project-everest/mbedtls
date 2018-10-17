@@ -762,7 +762,7 @@ static int eddsa_sign_wrap( void *ctx, mbedtls_md_type_t md_alg,
 
 static int eddsa_check_pair( const void *pub, const void *prv )
 {
-    return mbedtls_eddsa_check_pub_priv( pub, prv );
+    return mbedtls_eddsa_check_pub_priv( ( mbedtls_eddsa_context * )pub, ( mbedtls_eddsa_context * )prv );
 }
 
 static void *eddsa_alloc_wrap( void )

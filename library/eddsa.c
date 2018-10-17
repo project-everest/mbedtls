@@ -81,20 +81,6 @@ int mbedtls_eddsa_sign( mbedtls_eddsa_context *ctx,
                        ctx->keys.ed25519.private_,
                        ( unsigned char* )msg, ( uint32_t )msg_len );
 
-#if defined(MBEDTLS_DEBUG_C)
-    if( 0 )
-    {
-        size_t len;
-        char tmp[1024] = "";
-        mbedtls_eddsa_write_string( msg, msg_len, tmp, sizeof( tmp ), &len );
-        mbedtls_printf( "MSG: %s\n", tmp );
-        mbedtls_eddsa_write_string( ctx->keys.ed25519.private_, 32, tmp, sizeof( tmp ), &len );
-        mbedtls_printf( "KEY: %s\n", tmp );
-        mbedtls_eddsa_write_string( sig, 64, tmp, sizeof( tmp ), &len );
-        mbedtls_printf( "SIG: %s\n", tmp );
-    }
-#endif
-
     return( 0 );
 }
 
@@ -112,20 +98,6 @@ int mbedtls_eddsa_verify( mbedtls_eddsa_context *ctx,
            sig_len == 64 &&
            msg_len < 4294967232 /* 2^32 - 64 */ ) )
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-
-#if defined(MBEDTLS_DEBUG_C)
-    if( 0 )
-    {
-        size_t len;
-        char tmp[1024] = "";
-        mbedtls_eddsa_write_string( msg, msg_len, tmp, sizeof( tmp ), &len );
-        mbedtls_printf( "MSG: %s\n", tmp );
-        mbedtls_eddsa_write_string( ctx->keys.ed25519.public_, 32, tmp, sizeof( tmp ), &len );
-        mbedtls_printf( "KEY: %s\n", tmp );
-        mbedtls_eddsa_write_string( sig, 64, tmp, sizeof( tmp ), &len );
-        mbedtls_printf( "SIG: %s\n", tmp );
-    }
-#endif
 
     if( !Hacl_Ed25519_verify( ( unsigned char* )ctx->keys.ed25519.public_,
         ( unsigned char* )msg, ( uint32_t )msg_len,

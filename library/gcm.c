@@ -288,34 +288,11 @@ static void gcm_mult( mbedtls_gcm_context *ctx, const unsigned char x[16],
     PUT_UINT32_BE( zl, output, 12 );
 }
 
-int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
-                int mode,
-                const unsigned char *iv,
-                size_t iv_len,
-                const unsigned char *add,
-                size_t add_len )
+int mbedtls_gcm_set_iv(mbedtls_gcm_context *ctx, const unsigned char *iv, size_t iv_len)
 {
-    int ret;
-    unsigned char work_buf[16];
-    size_t i;
     const unsigned char *p;
-    size_t use_len, olen = 0;
-
-    /* IV and AD are limited to 2^64 bits, so 2^61 bytes */
-    /* IV is not allowed to be zero length */
-    if( iv_len == 0 ||
-      ( (uint64_t) iv_len  ) >> 61 != 0 ||
-      ( (uint64_t) add_len ) >> 61 != 0 )
-    {
-        return( MBEDTLS_ERR_GCM_BAD_INPUT );
-    }
-
-    memset( ctx->y, 0x00, sizeof(ctx->y) );
-    memset( ctx->buf, 0x00, sizeof(ctx->buf) );
-
-    ctx->mode = mode;
-    ctx->len = 0;
-    ctx->add_len = 0;
+    unsigned char work_buf[16];
+    size_t i, use_len;
 
     if( iv_len == 12 )
     {
@@ -345,6 +322,41 @@ int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
             ctx->y[i] ^= work_buf[i];
 
         gcm_mult( ctx, ctx->y, ctx->y );
+    }
+
+    return( 0 );
+}
+
+int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
+                int mode,
+                const unsigned char *iv,
+                size_t iv_len,
+                const unsigned char *add,
+                size_t add_len )
+{
+    int ret;
+    const unsigned char *p;
+    size_t i, use_len, olen = 0;
+
+    /* IV and AD are limited to 2^64 bits, so 2^61 bytes */
+    /* IV is not allowed to be zero length */
+    if( iv_len == 0 ||
+      ( (uint64_t) iv_len  ) >> 61 != 0 ||
+      ( (uint64_t) add_len ) >> 61 != 0 )
+    {
+        return( MBEDTLS_ERR_GCM_BAD_INPUT );
+    }
+
+    memset( ctx->y, 0x00, sizeof(ctx->y) );
+    memset( ctx->buf, 0x00, sizeof(ctx->buf) );
+
+    ctx->mode = mode;
+    ctx->len = 0;
+    ctx->add_len = 0;
+
+    if( ( ret = mbedtls_gcm_set_iv( ctx, iv, iv_len ) ) != 0 )
+    {
+        return ret;
     }
 
     if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->base_ectr,
@@ -465,60 +477,6 @@ int mbedtls_gcm_finish( mbedtls_gcm_context *ctx,
     return( 0 );
 }
 
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
-void mbedtls_everest_prepare_aes_gcm_buffer(
-        unsigned char *inbuf, size_t inbuf_size,
-        unsigned char **argbuf, size_t *argbuf_size,
-        int needs_copy )
-{
-    size_t rem;
-
-    if( *argbuf_size == 0 )
-    {
-        rem = inbuf_size % 16;
-        if( rem == 0 )
-            *argbuf = inbuf;
-        else
-        {
-            size_t esz = ( inbuf_size + 16 - rem );
-            *argbuf = mbedtls_calloc( 1, esz );
-            *argbuf_size = esz;
-            if( needs_copy ) memcpy( *argbuf, inbuf, inbuf_size );
-        }
-    }
-    else
-    {
-        if( inbuf_size > *argbuf_size )
-        {
-            size_t esz = ( inbuf_size + 16 - ( inbuf_size % 16 ) );
-            mbedtls_free( *argbuf );
-            *argbuf = mbedtls_calloc( 1, esz );
-            *argbuf_size = esz;
-        }
-        if( needs_copy ) memcpy( *argbuf, inbuf, inbuf_size );
-    }
-}
-
-void mbedtls_everest_prepare_aes_gcm_buffers(
-    everest_aes_gcm_args * args,
-    size_t length,
-    unsigned char *iv, size_t iv_len,
-    unsigned char *add, size_t add_len,
-    unsigned char *input,
-    unsigned char *output,
-    size_t tag_len, unsigned char *tag )
-{
-    mbedtls_everest_prepare_aes_gcm_buffer( input, length, &args->vale_args.plain_ptr, &args->plain_ptr_size, 1 );
-    mbedtls_everest_prepare_aes_gcm_buffer( add, add_len, &args->vale_args.auth_ptr, &args->auth_ptr_size, 1 );
-    mbedtls_everest_prepare_aes_gcm_buffer( iv, iv_len, &args->vale_args.iv_ptr, &args->iv_ptr_size, 1 );
-    mbedtls_everest_prepare_aes_gcm_buffer( output, length, &args->vale_args.out_ptr, &args->out_ptr_size, 0 );
-    mbedtls_everest_prepare_aes_gcm_buffer( tag, tag_len, &args->vale_args.tag_ptr, &args->tag_ptr_size, 0 );
-
-    args->vale_args.plain_num_bytes = length;
-    args->vale_args.auth_num_bytes = add_len;
-}
-#endif
-
 int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
                                int mode,
                                size_t length,
@@ -535,9 +493,21 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
         int ret = 0;
         everest_aes_gcm_args * args = ctx->cipher_ctx.cipher_ctx;
 
-        if( length == 0 || iv == NULL || iv_len != 12 ||
-            input == NULL || output == NULL || tag == NULL)
+        if( iv == NULL || tag_len < 4 || tag_len > 16 )
             return( MBEDTLS_ERR_GCM_BAD_INPUT );
+
+        if( iv_len > 12 )
+        {
+            mbedtls_gcm_set_iv( ctx, iv, iv_len );
+            iv = ctx->y;
+            iv_len = 12;
+        }
+
+        if( ctx->len + length < ctx->len ||
+            ( uint64_t )ctx->len + length > 0xFFFFFFFE0ull )
+            return( MBEDTLS_ERR_GCM_BAD_INPUT );
+
+        ctx->len += length;
 
         mbedtls_everest_prepare_aes_gcm_buffers( args,
             length,
