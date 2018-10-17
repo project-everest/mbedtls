@@ -466,60 +466,6 @@ int mbedtls_gcm_finish( mbedtls_gcm_context *ctx,
     return( 0 );
 }
 
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
-void mbedtls_everest_prepare_aes_gcm_buffer(
-        unsigned char *inbuf, size_t inbuf_size,
-        unsigned char **argbuf, size_t *argbuf_size,
-        int needs_copy )
-{
-    size_t rem;
-
-    if( *argbuf_size == 0 )
-    {
-        rem = inbuf_size % 16;
-        if( rem == 0 )
-            *argbuf = inbuf;
-        else
-        {
-            size_t esz = ( inbuf_size + 16 - rem );
-            *argbuf = mbedtls_calloc( 1, esz );
-            *argbuf_size = esz;
-            if( needs_copy ) memcpy( *argbuf, inbuf, inbuf_size );
-        }
-    }
-    else
-    {
-        if( inbuf_size > *argbuf_size )
-        {
-            size_t esz = ( inbuf_size + 16 - ( inbuf_size % 16 ) );
-            mbedtls_free( *argbuf );
-            *argbuf = mbedtls_calloc( 1, esz );
-            *argbuf_size = esz;
-        }
-        if( needs_copy ) memcpy( *argbuf, inbuf, inbuf_size );
-    }
-}
-
-void mbedtls_everest_prepare_aes_gcm_buffers(
-    everest_aes_gcm_args * args,
-    size_t length,
-    unsigned char *iv, size_t iv_len,
-    unsigned char *add, size_t add_len,
-    unsigned char *input,
-    unsigned char *output,
-    size_t tag_len, unsigned char *tag )
-{
-    mbedtls_everest_prepare_aes_gcm_buffer( input, length, &args->vale_args.plain_ptr, &args->plain_ptr_size, 1 );
-    mbedtls_everest_prepare_aes_gcm_buffer( add, add_len, &args->vale_args.auth_ptr, &args->auth_ptr_size, 1 );
-    mbedtls_everest_prepare_aes_gcm_buffer( iv, iv_len, &args->vale_args.iv_ptr, &args->iv_ptr_size, 1 );
-    mbedtls_everest_prepare_aes_gcm_buffer( output, length, &args->vale_args.out_ptr, &args->out_ptr_size, 0 );
-    mbedtls_everest_prepare_aes_gcm_buffer( tag, tag_len, &args->vale_args.tag_ptr, &args->tag_ptr_size, 0 );
-
-    args->vale_args.plain_num_bytes = length;
-    args->vale_args.auth_num_bytes = add_len;
-}
-#endif
-
 int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
                                int mode,
                                size_t length,
@@ -536,9 +482,15 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
         int ret = 0;
         everest_aes_gcm_args * args = ctx->cipher_ctx.cipher_ctx;
 
-        if( length == 0 || iv == NULL || iv_len != 12 ||
-            input == NULL || output == NULL || tag == NULL)
+        if( iv == NULL || iv_len == 0 || iv_len > 16 ||
+            tag_len < 4 || tag_len > 16 )
             return( MBEDTLS_ERR_GCM_BAD_INPUT );
+
+        if( ctx->len + length < ctx->len ||
+            ( uint64_t )ctx->len + length > 0xFFFFFFFE0ull )
+            return( MBEDTLS_ERR_GCM_BAD_INPUT );
+
+        ctx->len += length;
 
         mbedtls_everest_prepare_aes_gcm_buffers( args,
             length,
