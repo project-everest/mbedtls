@@ -255,9 +255,9 @@ typedef struct
 
     size_t plain_ptr_size;
     size_t auth_ptr_size;
-    size_t iv_ptr_size;
     size_t out_ptr_size;
     size_t tag_ptr_size;
+    unsigned char iv_buf[16];
 } everest_aes_gcm_args;
 
 void everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize );
@@ -273,11 +273,30 @@ extern int gcm256_decrypt( vale_args_t *a );
 struct mbedtls_gcm_context;
 typedef struct mbedtls_gcm_context mbedtls_gcm_context;
 
+void mbedtls_everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize );
+
 int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
                                     const unsigned char *key,
                                     unsigned int keybits );
 
+void mbedtls_everest_aes_gcm_wipe_key( mbedtls_gcm_context *ctx );
+
 int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx);
+
+void mbedtls_everest_prepare_aes_gcm_buffer(
+    unsigned char *inbuf, size_t inbuf_size,
+    unsigned char **argbuf, size_t *argbuf_size,
+    int needs_copy );
+
+void mbedtls_everest_prepare_aes_gcm_buffers(
+    everest_aes_gcm_args * args,
+    size_t length,
+    unsigned char *iv, size_t iv_len,
+    unsigned char *add, size_t add_len,
+    unsigned char *input,
+    unsigned char *output,
+    size_t tag_len, unsigned char *tag );
+
 
 #endif
 
