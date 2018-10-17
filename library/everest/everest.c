@@ -163,11 +163,10 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
 
 #if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
 
-void everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize )
+void mbedtls_everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize )
 {
     args->plain_ptr_size = 0;
     args->auth_ptr_size = 0;
-    args->iv_ptr_size = 0;
     args->out_ptr_size = 0;
     args->tag_ptr_size = 0;
 
@@ -204,14 +203,14 @@ int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
         if( keybits != 128 )
             return ( MBEDTLS_ERR_GCM_BAD_INPUT );
         args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
-        everest_aes_gcm_args_init( args, 11 );
+        mbedtls_everest_aes_gcm_args_init( args, 11 );
         aes128_key_expansion( ( everest_byte * )key, args->vale_args.expanded_key_ptr );
         break;
     case MBEDTLS_CIPHER_AES_256_GCM:
         if( keybits != 256 )
             return ( MBEDTLS_ERR_GCM_BAD_INPUT );
         args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
-        everest_aes_gcm_args_init( args, 15 );
+        mbedtls_everest_aes_gcm_args_init( args, 15 );
         aes256_key_expansion( ( everest_byte * )key, args->vale_args.expanded_key_ptr );
         break;
     default:
@@ -233,7 +232,6 @@ int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx )
         everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.cipher_ctx;
         mbedtls_everest_aes_gcm_wipe_key( ctx );
         if( args->auth_ptr_size != 0 ) mbedtls_free( args->vale_args.auth_ptr );
-        if( args->iv_ptr_size != 0 ) mbedtls_free( args->vale_args.iv_ptr );
         if( args->out_ptr_size!= 0 ) mbedtls_free( args->vale_args.out_ptr );
         if( args->plain_ptr_size != 0 ) mbedtls_free( args->vale_args.plain_ptr );
         if( args->tag_ptr_size != 0 ) mbedtls_free( args->vale_args.tag_ptr );
@@ -243,6 +241,66 @@ int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx )
     }
 
     return( 0 );
+}
+
+void mbedtls_everest_prepare_aes_gcm_buffer(
+    unsigned char *inbuf, size_t inbuf_size,
+    unsigned char **argbuf, size_t *argbuf_size,
+    int needs_copy )
+{
+    size_t rem;
+
+    if( inbuf_size > 0 )
+    {
+        if( *argbuf_size == 0 )
+        {
+            rem = inbuf_size % 16;
+            if( rem == 0 )
+                *argbuf = inbuf;
+            else
+            {
+                size_t esz = ( inbuf_size + 16 - rem );
+                *argbuf = mbedtls_calloc( 1, esz );
+                *argbuf_size = esz;
+                if( needs_copy ) memcpy( *argbuf, inbuf, inbuf_size );
+            }
+        }
+        else
+        {
+            if( inbuf_size > *argbuf_size )
+            {
+                size_t esz = ( inbuf_size + 16 - ( inbuf_size % 16 ) );
+                mbedtls_free( *argbuf );
+                *argbuf = mbedtls_calloc( 1, esz );
+                *argbuf_size = esz;
+            }
+            if( needs_copy ) memcpy( *argbuf, inbuf, inbuf_size );
+        }
+    }
+    else
+        *argbuf_size = 0;
+}
+
+void mbedtls_everest_prepare_aes_gcm_buffers(
+    everest_aes_gcm_args * args,
+    size_t length,
+    unsigned char *iv, size_t iv_len,
+    unsigned char *add, size_t add_len,
+    unsigned char *input,
+    unsigned char *output,
+    size_t tag_len, unsigned char *tag )
+{
+    mbedtls_everest_prepare_aes_gcm_buffer( input, length, &args->vale_args.plain_ptr, &args->plain_ptr_size, 1 );
+    mbedtls_everest_prepare_aes_gcm_buffer( add, add_len, &args->vale_args.auth_ptr, &args->auth_ptr_size, 1 );
+    args->vale_args.iv_ptr = args->iv_buf;
+    mbedtls_everest_prepare_aes_gcm_buffer( output, length, &args->vale_args.out_ptr, &args->out_ptr_size, 0 );
+    mbedtls_everest_prepare_aes_gcm_buffer( tag, tag_len, &args->vale_args.tag_ptr, &args->tag_ptr_size, 0 );
+
+    memcpy( args->iv_buf, iv, iv_len );
+    if( iv_len < 16 ) memset( args->iv_buf + iv_len, 0, 16 - iv_len );
+
+    args->vale_args.plain_num_bytes = length;
+    args->vale_args.auth_num_bytes = add_len;
 }
 
 #endif /* MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM */

@@ -257,6 +257,28 @@ void mbedtls_debug_printf_ecdh( const mbedtls_ssl_context *ssl, int level,
                                 mbedtls_debug_ecdh_attr attr );
 #endif
 
+#if defined(MBEDTLS_EDDSA_C)
+/**
+ * \brief   Print EdDSA keys to the debug output. This function is always
+ *          used through the MBEDTLS_SSL_DEBUG_ECP() macro, which supplies the
+ *          ssl context, file and line number parameters.
+ *
+ * \param ssl       SSL context
+ * \param level     error level of the debug message
+ * \param file      file the error has occurred in
+ * \param line      line number the error has occurred in
+ * \param text      a name or label for the ECP point being output. Normally the
+ *                  variable name
+ * \param keys      the EdDSA keys
+ *
+ * \attention       This function is intended for INTERNAL usage within the
+ *                  library only.
+ */
+void mbedtls_debug_print_eddsa( const mbedtls_ssl_context *ssl, int level,
+                                const char *file, int line,
+                                const char *text, const mbedtls_eddsa_keys * keys );
+#endif /* MBEDTLS_EDDSA_C */
+
 #ifdef __cplusplus
 }
 #endif
