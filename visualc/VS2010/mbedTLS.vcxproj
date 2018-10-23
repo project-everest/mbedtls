@@ -272,10 +272,10 @@
     <ClCompile Include="..\..\library\entropy_poll.c" />
     <ClCompile Include="..\..\library\error.c" />
     <ClCompile Include="..\..\library\everest\everest.c" />
-    <ClCompile Include="..\..\library\everest\Hacl_Curve25519.c" />
-    <ClCompile Include="..\..\library\everest\Hacl_Ed25519.c" />
     <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt128.c" />
     <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt64.c" />
+    <ClCompile Include="..\..\library\everest\msvc\Hacl_Curve25519.c" />
+    <ClCompile Include="..\..\library\everest\msvc\Hacl_Ed25519.c" />
     <ClCompile Include="..\..\library\everest\x25519.c" />
     <ClCompile Include="..\..\library\gcm.c" />
     <ClCompile Include="..\..\library\havege.c" />
