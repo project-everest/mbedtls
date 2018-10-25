@@ -40,6 +40,10 @@
 
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
 typedef mbedtls_ecdh_context mbedtls_ecdh_context_mbed;
+#else
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+#include "everest/everest.h"
+#endif
 #endif
 
 #if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)
@@ -189,6 +193,11 @@ int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp_id )
 #else
     switch( grp_id )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECP_DP_CURVE25519:
+            return( mbedtls_everest_setup( ctx, grp_id ) );
+#endif
+            break;
         default:
             ctx->point_format = MBEDTLS_ECP_PF_UNCOMPRESSED;
             ctx->var = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
@@ -241,6 +250,11 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
 #else
     switch( ctx->var )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
+            mbedtls_everest_free( ctx );
+            break;
+#endif
         case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
             ecdh_free_internal( &ctx->ctx.mbed_ecdh );
             break;
@@ -306,7 +320,7 @@ static int ecdh_make_params_internal( mbedtls_ecdh_context_mbed *ctx,
 }
 
 /*
- * Setup and write the ServerKeyExhange parameters (RFC 4492)
+ * Setup and write the ServerKeyExchange parameters (RFC 4492)
  *      struct {
  *          ECParameters    curve_params;
  *          ECPoint         public;
@@ -334,6 +348,10 @@ int mbedtls_ecdh_make_params( mbedtls_ecdh_context *ctx, size_t *olen,
 #else
     switch( ctx->var )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
+            return( mbedtls_everest_make_params( ctx, olen, buf, blen, f_rng, p_rng ) );
+#endif
         case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
             return( ecdh_make_params_internal( &ctx->ctx.mbed_ecdh, olen,
                                                ctx->point_format, buf, blen,
@@ -382,6 +400,10 @@ int mbedtls_ecdh_read_params( mbedtls_ecdh_context *ctx,
 #else
     switch( ctx->var )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
+            return( mbedtls_everest_read_params( ctx, buf, end) );
+#endif
         case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
             return( ecdh_read_params_internal( &ctx->ctx.mbed_ecdh,
                                                buf, end ) );
@@ -432,6 +454,10 @@ int mbedtls_ecdh_get_params( mbedtls_ecdh_context *ctx,
 #else
     switch( ctx->var )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
+            return( mbedtls_everest_get_params( ctx, key, side ) );
+#endif
         case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
             return( ecdh_get_params_internal( &ctx->ctx.mbed_ecdh,
                                               key, side ) );
@@ -502,6 +528,10 @@ int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
 #else
     switch( ctx->var )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
+            return( mbedtls_everest_make_public( ctx, olen, buf, blen, f_rng, p_rng ) );
+#endif
         case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
             return( ecdh_make_public_internal( &ctx->ctx.mbed_ecdh, olen,
                                                ctx->point_format, buf, blen,
@@ -543,6 +573,10 @@ int mbedtls_ecdh_read_public( mbedtls_ecdh_context *ctx,
 #else
     switch( ctx->var )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
+            return( mbedtls_everest_read_public( ctx, buf, blen ) );
+#endif
         case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
             return( ecdh_read_public_internal( &ctx->ctx.mbed_ecdh,
                                                        buf, blen ) );
@@ -621,6 +655,10 @@ int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
 #else
     switch( ctx->var )
     {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+        case MBEDTLS_ECDH_VARIANT_EVEREST:
+            return( mbedtls_everest_calc_secret( ctx, olen, buf, blen, f_rng, p_rng ) );
+#endif
         case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
             return( ecdh_calc_secret_internal( &ctx->ctx.mbed_ecdh, olen, buf,
                                                blen, f_rng, p_rng,
