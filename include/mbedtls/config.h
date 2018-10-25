@@ -3083,6 +3083,17 @@
  */
 //#define MBEDTLS_PLATFORM_ZEROIZE_ALT
 
+/**
+ * \def MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
+ *
+ * Enable the verified implementations of crypto primitives
+ * from Project Everest (currently only Curve25519).
+ * This feature breaks ECDH backward compatibility (see also
+ * MBEDTLS_ECDH_LEGACY_CONTEXT).
+ *
+ */
+#define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
+
 /* \} name SECTION: Customisation configuration options */
 
 /* Target and application specific configurations */
