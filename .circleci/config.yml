@@ -6,6 +6,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install build dependencies
+          command: 'apt update && apt install -y cmake g++'
+      - run:
           name: Make build directory
           command: mkdir build
       - run:
