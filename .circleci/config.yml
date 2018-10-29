@@ -2,12 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:stretch
+      - image: buildpack-deps:xenial
     steps:
       - checkout
       - run:
           name: Install build dependencies
-          command: 'apt update && apt install -y cmake g++'
+          command: 'apt update && apt install -y cmake'
       - run:
           name: Make build directory
           command: mkdir build
