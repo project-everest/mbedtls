@@ -23,3 +23,5 @@ jobs:
           name: Tests
           command: make test
           working_directory: build
+          environment:
+            CTEST_OUTPUT_ON_FAILURE: ON
