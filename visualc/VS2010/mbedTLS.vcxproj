@@ -45,7 +45,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>Windows7.1SDK</PlatformToolset>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -268,6 +268,7 @@
     <ClCompile Include="..\..\library\entropy_poll.c" />
     <ClCompile Include="..\..\library\error.c" />
     <ClCompile Include="..\..\library\everest\everest.c" />
+    <ClCompile Include="..\..\library\everest\kremlib\c\fstar_uint128_c.c" />
     <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt128.c" />
     <ClCompile Include="..\..\library\everest\kremlib\FStar_UInt64.c" />
     <ClCompile Include="..\..\library\everest\msvc\Hacl_Curve25519.c" />
