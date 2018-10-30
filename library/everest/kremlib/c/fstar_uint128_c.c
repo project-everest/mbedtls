@@ -15,6 +15,11 @@
 #include "FStar_UInt128.h"
 #include "C_Endianness.h"
 
+void store128_be( uint8_t *b, uint128_t n ) {
+    store64_be( b, ( uint64_t )( n >> 64 ) );
+    store64_be( b + 8, ( uint64_t )n );
+}
+
 #if !defined(KRML_VERIFIED_UINT128) && !defined(_MSC_VER)
 
 /* GCC + using native unsigned __int128 support */
