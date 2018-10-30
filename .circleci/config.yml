@@ -1,0 +1,27 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: buildpack-deps:xenial
+    steps:
+      - checkout
+      - run:
+          name: Install build dependencies
+          command: 'apt update && apt install -y cmake'
+      - run:
+          name: Make build directory
+          command: mkdir build
+      - run:
+          name: CMake
+          command: cmake ..
+          working_directory: build
+      - run:
+          name: Make
+          command: make
+          working_directory: build
+      - run:
+          name: Tests
+          command: make test
+          working_directory: build
+          environment:
+            CTEST_OUTPUT_ON_FAILURE: ON
