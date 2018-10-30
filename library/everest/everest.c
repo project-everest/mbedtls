@@ -181,8 +181,8 @@ void mbedtls_everest_aes_gcm_wipe_key( mbedtls_gcm_context *ctx )
     {
         switch( ctx->cipher_ctx.cipher_info->type )
         {
-        case MBEDTLS_CIPHER_AES_128_GCM: mbedtls_platform_zeroize( args->vale_args.expanded_key_ptr, 11 * 128 / 8 ); break;
-        case MBEDTLS_CIPHER_AES_256_GCM: mbedtls_platform_zeroize( args->vale_args.expanded_key_ptr, 15 * 128 / 8 ); break;
+        case MBEDTLS_CIPHER_AES_128_ECB: mbedtls_platform_zeroize( args->vale_args.expanded_key_ptr, 11 * 128 / 8 ); break;
+        case MBEDTLS_CIPHER_AES_256_ECB: mbedtls_platform_zeroize( args->vale_args.expanded_key_ptr, 15 * 128 / 8 ); break;
         default: break;
         }
         mbedtls_free( args->vale_args.expanded_key_ptr );
@@ -199,14 +199,14 @@ int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
 
     switch( ctx->cipher_ctx.cipher_info->type )
     {
-    case MBEDTLS_CIPHER_AES_128_GCM:
+    case MBEDTLS_CIPHER_AES_128_ECB:
         if( keybits != 128 )
             return ( MBEDTLS_ERR_GCM_BAD_INPUT );
         args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
         mbedtls_everest_aes_gcm_args_init( args, 11 );
         aes128_key_expansion( ( everest_byte * )key, args->vale_args.expanded_key_ptr );
         break;
-    case MBEDTLS_CIPHER_AES_256_GCM:
+    case MBEDTLS_CIPHER_AES_256_ECB:
         if( keybits != 256 )
             return ( MBEDTLS_ERR_GCM_BAD_INPUT );
         args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
@@ -217,6 +217,7 @@ int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
         return( MBEDTLS_ERR_GCM_BAD_INPUT );
     }
 
+    args->key = key;
     ctx->cipher_ctx.cipher_ctx = args;
 
     return( 0 );
@@ -226,8 +227,8 @@ int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx )
 {
     if( ctx->cipher_ctx.cipher_info != NULL &&
         ctx->cipher_ctx.cipher_ctx != NULL &&
-        ( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_GCM ||
-          ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_GCM ) )
+        ( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_ECB ||
+          ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_ECB ) )
     {
         everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.cipher_ctx;
         mbedtls_everest_aes_gcm_wipe_key( ctx );
@@ -284,7 +285,6 @@ void mbedtls_everest_prepare_aes_gcm_buffer(
 void mbedtls_everest_prepare_aes_gcm_buffers(
     everest_aes_gcm_args * args,
     size_t length,
-    unsigned char *iv, size_t iv_len,
     unsigned char *add, size_t add_len,
     unsigned char *input,
     unsigned char *output,
@@ -295,9 +295,6 @@ void mbedtls_everest_prepare_aes_gcm_buffers(
     args->vale_args.iv_ptr = args->iv_buf;
     mbedtls_everest_prepare_aes_gcm_buffer( output, length, &args->vale_args.out_ptr, &args->out_ptr_size, 0 );
     mbedtls_everest_prepare_aes_gcm_buffer( tag, tag_len, &args->vale_args.tag_ptr, &args->tag_ptr_size, 0 );
-
-    memcpy( args->iv_buf, iv, iv_len );
-    if( iv_len < 16 ) memset( args->iv_buf + iv_len, 0, 16 - iv_len );
 
     args->vale_args.plain_num_bytes = length;
     args->vale_args.auth_num_bytes = add_len;

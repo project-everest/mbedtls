@@ -170,39 +170,28 @@ int mbedtls_gcm_setkey( mbedtls_gcm_context *ctx,
     int ret;
     const mbedtls_cipher_info_t *cipher_info;
 
+    cipher_info = mbedtls_cipher_info_from_values( cipher, keybits, MBEDTLS_MODE_ECB );
+
+    if( cipher_info == NULL )
+        return( MBEDTLS_ERR_GCM_BAD_INPUT );
+
+    if( cipher_info->block_size != 16 )
+        return( MBEDTLS_ERR_GCM_BAD_INPUT );
+
+    mbedtls_cipher_free( &ctx->cipher_ctx );
+
+    if( ( ret = mbedtls_cipher_setup( &ctx->cipher_ctx, cipher_info ) ) != 0 )
+        return( ret );
+
 #if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
     if( cipher == MBEDTLS_CIPHER_ID_AES && ( keybits == 128 || keybits == 256 ) )
     {
-        cipher_info = mbedtls_cipher_info_from_values( cipher, keybits, MBEDTLS_MODE_GCM );
-        if( cipher_info == NULL )
-            return( MBEDTLS_ERR_GCM_BAD_INPUT );
-
-        if( cipher_info->block_size != 16 )
-            return( MBEDTLS_ERR_GCM_BAD_INPUT );
-
-        mbedtls_cipher_free( &ctx->cipher_ctx );
-
-        if( ( ret = mbedtls_cipher_setup( &ctx->cipher_ctx, cipher_info ) ) != 0 )
-            return( ret );
-
         if( ( ret = mbedtls_everest_aes_gcm_setkey( ctx, key, keybits ) ) != 0 )
             return( ret );
     }
     else
 #endif
     {
-        cipher_info = mbedtls_cipher_info_from_values( cipher, keybits, MBEDTLS_MODE_ECB );
-        if( cipher_info == NULL )
-            return( MBEDTLS_ERR_GCM_BAD_INPUT );
-
-        if( cipher_info->block_size != 16 )
-            return( MBEDTLS_ERR_GCM_BAD_INPUT );
-
-        mbedtls_cipher_free( &ctx->cipher_ctx );
-
-        if( ( ret = mbedtls_cipher_setup( &ctx->cipher_ctx, cipher_info ) ) != 0 )
-            return( ret );
-
         if( ( ret = mbedtls_cipher_setkey( &ctx->cipher_ctx, key, keybits,
             MBEDTLS_ENCRYPT ) ) != 0 )
         {
@@ -329,11 +318,11 @@ int mbedtls_gcm_set_iv(mbedtls_gcm_context *ctx, const unsigned char *iv, size_t
 }
 
 int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
-                int mode,
-                const unsigned char *iv,
-                size_t iv_len,
-                const unsigned char *add,
-                size_t add_len )
+    int mode,
+    const unsigned char *iv,
+    size_t iv_len,
+    const unsigned char *add,
+    size_t add_len )
 {
     int ret;
     const unsigned char *p;
@@ -342,14 +331,53 @@ int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
     /* IV and AD are limited to 2^64 bits, so 2^61 bytes */
     /* IV is not allowed to be zero length */
     if( iv_len == 0 ||
-      ( (uint64_t) iv_len  ) >> 61 != 0 ||
-      ( (uint64_t) add_len ) >> 61 != 0 )
+        ( ( uint64_t )iv_len ) >> 61 != 0 ||
+        ( ( uint64_t )add_len ) >> 61 != 0 )
     {
         return( MBEDTLS_ERR_GCM_BAD_INPUT );
     }
 
-    memset( ctx->y, 0x00, sizeof(ctx->y) );
-    memset( ctx->buf, 0x00, sizeof(ctx->buf) );
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
+    if( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_ECB ||
+        ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_ECB )
+    {
+        everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.cipher_ctx;
+        unsigned char nil[16];
+        memset( nil, 0, 16 );
+        mbedtls_everest_prepare_aes_gcm_buffer( (unsigned char*)add, add_len, &args->vale_args.auth_ptr, &args->auth_ptr_size, 1 );
+        mbedtls_everest_prepare_aes_gcm_buffer( nil, 16, &args->vale_args.tag_ptr, &args->tag_ptr_size, 0 );
+
+        if( iv_len == 12 )
+            memcpy( args->iv_buf, iv, 12 );
+        {
+            vale_args_t tmp_va;
+            memset( args->iv_buf, 0, 16 );
+            tmp_va.auth_ptr = 0;
+            tmp_va.auth_num_bytes = 0;
+            tmp_va.expanded_key_ptr = args->vale_args.expanded_key_ptr;
+            tmp_va.iv_ptr = args->iv_buf;
+            tmp_va.out_ptr = ctx->base_ectr;
+            tmp_va.plain_num_bytes = 0;
+            tmp_va.plain_ptr = 0;
+            tmp_va.tag_ptr = args->vale_args.tag_ptr;
+            switch( ctx->cipher_ctx.cipher_info->key_bitlen )
+            {
+            case 128: gcm128_encrypt( &tmp_va ); break;
+            case 256: gcm256_encrypt( &tmp_va ); break;
+            default: return MBEDTLS_ERR_GCM_BAD_INPUT;
+            }
+        }
+
+        switch( ctx->cipher_ctx.cipher_info->key_bitlen )
+        {
+        case 128: gcm128_encrypt( &args->vale_args ); break;
+        case 256: gcm256_encrypt( &args->vale_args ); break;
+        default: return MBEDTLS_ERR_GCM_BAD_INPUT;
+        }
+    }
+#endif
+    memset( ctx->y, 0x00, sizeof( ctx->y ) );
+    memset( ctx->buf, 0x00, sizeof( ctx->buf ) );
 
     ctx->mode = mode;
     ctx->len = 0;
@@ -361,7 +389,7 @@ int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
     }
 
     if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->base_ectr,
-                             &olen ) ) != 0 )
+        &olen ) ) != 0 )
     {
         return( ret );
     }
@@ -488,8 +516,8 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
                                size_t tag_len, unsigned char *tag )
 {
 #if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
-    if( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_GCM ||
-        ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_GCM )
+    if( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_ECB ||
+        ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_ECB )
     {
         int ret = 0;
         everest_aes_gcm_args * args = ctx->cipher_ctx.cipher_ctx;
@@ -497,12 +525,32 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
         if( iv == NULL || tag_len < 4 || tag_len > 16 )
             return( MBEDTLS_ERR_GCM_BAD_INPUT );
 
-        if( iv_len > 12 )
+        if( iv_len <= 12 )
         {
-            mbedtls_gcm_set_iv( ctx, iv, iv_len );
-            iv = ctx->y;
-            iv_len = 12;
+            memcpy( args->iv_buf, iv, iv_len );
+            memset( args->iv_buf + iv_len, 0, 12 - iv_len );
         }
+        else
+        {
+            vale_args_t tmp_va;
+
+            memset( args->iv_buf, 0, 16 );
+            tmp_va.auth_ptr = 0;
+            tmp_va.auth_num_bytes = 0;
+            tmp_va.expanded_key_ptr = args->vale_args.expanded_key_ptr;
+            tmp_va.iv_ptr = 0;
+            tmp_va.out_ptr = output;
+            tmp_va.plain_num_bytes = 0;
+            tmp_va.plain_ptr = 0;
+            tmp_va.tag_ptr = tag;
+            switch( ctx->cipher_ctx.cipher_info->key_bitlen )
+            {
+            case 128: gcm128_encrypt( &tmp_va ); break;
+            case 256: gcm256_encrypt( &tmp_va ); break;
+            default: return( MBEDTLS_ERR_GCM_BAD_INPUT );
+            }
+        }
+
 
         if( ctx->len + length < ctx->len ||
             ( uint64_t )ctx->len + length > 0xFFFFFFFE0ull )
@@ -512,7 +560,6 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
 
         mbedtls_everest_prepare_aes_gcm_buffers( args,
             length,
-            ( unsigned char* )iv, iv_len,
             ( unsigned char* )add, add_len,
             ( unsigned char* )input,
             output, tag_len, tag );
@@ -545,7 +592,7 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
         if (args->out_ptr_size != 0) memcpy( output, args->vale_args.out_ptr, length );
         if( args->tag_ptr_size != 0 ) memcpy( tag, args->vale_args.tag_ptr, tag_len );
 
-        if( ret != 0 )
+        if( ret != 0 && tag != 0)
             return( MBEDTLS_ERR_GCM_AUTH_FAILED );
     }
     else
@@ -577,8 +624,8 @@ int mbedtls_gcm_auth_decrypt( mbedtls_gcm_context *ctx,
     int ret;
 
 #if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
-    if( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_GCM ||
-        ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_GCM )
+    if( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_ECB ||
+        ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_ECB )
     {
         if( ( ret = mbedtls_gcm_crypt_and_tag( ctx, MBEDTLS_GCM_DECRYPT, length,
                                                iv, iv_len, add, add_len,
