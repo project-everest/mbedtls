@@ -317,6 +317,9 @@ typedef struct mbedtls_cipher_context_t
     /** The cipher-specific context. */
     void *cipher_ctx;
 
+    /** A special Everest cipher ctx */
+    void *everest_cipher_ctx;
+
 #if defined(MBEDTLS_CMAC_C)
     /** CMAC-specific context. */
     mbedtls_cmac_context_t *cmac_ctx;
