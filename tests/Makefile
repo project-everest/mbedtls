@@ -63,7 +63,6 @@ APPS =	test_suite_aes.ecb$(EXEXT)	test_suite_aes.cbc$(EXEXT)	\
 	test_suite_cipher.aes$(EXEXT)					\
 	test_suite_cipher.arc4$(EXEXT)	test_suite_cipher.ccm$(EXEXT)	\
 	test_suite_cipher.chacha20$(EXEXT)				\
-	test_suite_cipher.gcm$(EXEXT)					\
 	test_suite_cipher.blowfish$(EXEXT)				\
 	test_suite_cipher.camellia$(EXEXT)				\
 	test_suite_cipher.des$(EXEXT)	test_suite_cipher.null$(EXEXT)	\
@@ -73,13 +72,6 @@ APPS =	test_suite_aes.ecb$(EXEXT)	test_suite_aes.cbc$(EXEXT)	\
 	test_suite_ecdh$(EXEXT)		test_suite_ecdsa$(EXEXT)	\
 	test_suite_ecjpake$(EXEXT)	test_suite_ecp$(EXEXT)		\
 	test_suite_error$(EXEXT)	test_suite_entropy$(EXEXT)	\
-	test_suite_gcm.aes128_de$(EXEXT)				\
-	test_suite_gcm.aes192_de$(EXEXT)				\
-	test_suite_gcm.aes256_de$(EXEXT)				\
-	test_suite_gcm.aes128_en$(EXEXT)				\
-	test_suite_gcm.aes192_en$(EXEXT)				\
-	test_suite_gcm.aes256_en$(EXEXT)				\
-	test_suite_gcm.camellia$(EXEXT)					\
 	test_suite_hkdf$(EXEXT)						\
 	test_suite_hmac_drbg.misc$(EXEXT)				\
 	test_suite_hmac_drbg.no_reseed$(EXEXT)				\
@@ -98,6 +90,15 @@ APPS =	test_suite_aes.ecb$(EXEXT)	test_suite_aes.cbc$(EXEXT)	\
 	test_suite_ssl$(EXEXT)		test_suite_timing$(EXEXT)			\
 	test_suite_x509parse$(EXEXT)	test_suite_x509write$(EXEXT)	\
 	test_suite_xtea$(EXEXT)		test_suite_version$(EXEXT)
+
+	# test_suite_cipher.gcm$(EXEXT)					\
+	test_suite_gcm.aes128_de$(EXEXT)				\
+	test_suite_gcm.aes192_de$(EXEXT)				\
+	test_suite_gcm.aes256_de$(EXEXT)				\
+	test_suite_gcm.aes128_en$(EXEXT)				\
+	test_suite_gcm.aes192_en$(EXEXT)				\
+	test_suite_gcm.aes256_en$(EXEXT)				\
+	test_suite_gcm.camellia$(EXEXT)					\
 
 .SILENT:
 
