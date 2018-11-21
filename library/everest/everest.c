@@ -175,7 +175,7 @@ void mbedtls_everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned in
 
 void mbedtls_everest_aes_gcm_wipe_key( mbedtls_gcm_context *ctx )
 {
-    everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.cipher_ctx;
+    everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.everest_cipher_ctx;
 
     if( args && args->vale_args.expanded_key_ptr )
     {
@@ -218,7 +218,7 @@ int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
     }
 
     args->key = key;
-    ctx->cipher_ctx.cipher_ctx = args;
+    ctx->cipher_ctx.everest_cipher_ctx= args;
 
     return( 0 );
 }
@@ -226,19 +226,19 @@ int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
 int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx )
 {
     if( ctx->cipher_ctx.cipher_info != NULL &&
-        ctx->cipher_ctx.cipher_ctx != NULL &&
+        ctx->cipher_ctx.everest_cipher_ctx != NULL &&
         ( ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_128_ECB ||
           ctx->cipher_ctx.cipher_info->type == MBEDTLS_CIPHER_AES_256_ECB ) )
     {
-        everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.cipher_ctx;
+        everest_aes_gcm_args * args = ( everest_aes_gcm_args * )ctx->cipher_ctx.everest_cipher_ctx;
         mbedtls_everest_aes_gcm_wipe_key( ctx );
         if( args->auth_ptr_size != 0 ) mbedtls_free( args->vale_args.auth_ptr );
         if( args->out_ptr_size!= 0 ) mbedtls_free( args->vale_args.out_ptr );
         if( args->plain_ptr_size != 0 ) mbedtls_free( args->vale_args.plain_ptr );
         if( args->tag_ptr_size != 0 ) mbedtls_free( args->vale_args.tag_ptr );
-        mbedtls_platform_zeroize( ctx->cipher_ctx.cipher_ctx, sizeof( everest_aes_gcm_args ) );
-        mbedtls_free( ctx->cipher_ctx.cipher_ctx );
-        ctx->cipher_ctx.cipher_ctx = NULL;
+        mbedtls_platform_zeroize( args, sizeof( everest_aes_gcm_args ) );
+        mbedtls_free( args );
+        ctx->cipher_ctx.everest_cipher_ctx = NULL;
     }
 
     return( 0 );
