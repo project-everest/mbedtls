@@ -258,6 +258,7 @@ typedef struct
     size_t out_ptr_size;
     size_t tag_ptr_size;
     unsigned char iv_buf[16];
+    const unsigned char *key;
 } everest_aes_gcm_args;
 
 void everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize );
@@ -291,7 +292,6 @@ void mbedtls_everest_prepare_aes_gcm_buffer(
 void mbedtls_everest_prepare_aes_gcm_buffers(
     everest_aes_gcm_args * args,
     size_t length,
-    unsigned char *iv, size_t iv_len,
     unsigned char *add, size_t add_len,
     unsigned char *input,
     unsigned char *output,
