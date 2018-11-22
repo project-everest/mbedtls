@@ -89,9 +89,8 @@ APPS =	test_suite_aes.ecb$(EXEXT)	test_suite_aes.cbc$(EXEXT)	\
 	test_suite_rsa$(EXEXT)		test_suite_shax$(EXEXT)		\
 	test_suite_ssl$(EXEXT)		test_suite_timing$(EXEXT)			\
 	test_suite_x509parse$(EXEXT)	test_suite_x509write$(EXEXT)	\
-	test_suite_xtea$(EXEXT)		test_suite_version$(EXEXT)
-
-	# test_suite_cipher.gcm$(EXEXT)					\
+	test_suite_xtea$(EXEXT)		test_suite_version$(EXEXT) \
+	test_suite_cipher.gcm$(EXEXT)					\
 	test_suite_gcm.aes128_de$(EXEXT)				\
 	test_suite_gcm.aes192_de$(EXEXT)				\
 	test_suite_gcm.aes256_de$(EXEXT)				\
