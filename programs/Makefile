@@ -14,7 +14,7 @@ LOCAL_LDFLAGS = -L../library 			\
 		-lmbedx509$(SHARED_SUFFIX)	\
 		-lmbedcrypto$(SHARED_SUFFIX)
 
-LOCAL_CFLAGS+=-I../3rdparty/everest/include
+LOCAL_CFLAGS+=-I../3rdparty/everest/include -I../3rdparty/everest/include/everest
 
 ifndef SHARED
 DEP=../library/libmbedcrypto.a ../library/libmbedx509.a ../library/libmbedtls.a
@@ -248,6 +248,7 @@ test/ssl_cert_test$(EXEXT): test/ssl_cert_test.c $(DEP)
 
 test/benchmark$(EXEXT): test/benchmark.c $(DEP)
 	echo "  CC    test/benchmark.c"
+	echo $(CC) $(LOCAL_CFLAGS) $(CFLAGS) test/benchmark.c   $(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) test/benchmark.c   $(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
 
 test/cpp_dummy_build$(EXEXT): test/cpp_dummy_build.cpp $(DEP)

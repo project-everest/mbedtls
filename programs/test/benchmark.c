@@ -79,6 +79,8 @@ int main( void )
 
 #include "mbedtls/error.h"
 
+#include <Hacl_Curve25519.h>
+
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include "mbedtls/memory_buffer_alloc.h"
 #endif
@@ -1032,6 +1034,47 @@ int main( int argc, char *argv[] )
             mbedtls_ecdh_free( &ecdh_srv );
             mbedtls_ecdh_free( &ecdh_cli );
         }
+    }
+#endif
+
+#if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+    if (1) {
+#define BSZ 32
+        uint8_t in1[BSZ], in2[BSZ + 1], out[BSZ];
+        mbedtls_ecdh_context ctx;
+        mbedtls_ecp_point R, P;
+        mbedtls_mpi m;
+        size_t olen;
+
+        mbedtls_ecdh_init(&ctx);
+        mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519);
+
+        mbedtls_ecp_point_init(&R);
+        mbedtls_ecp_point_init(&P);
+        mbedtls_mpi_init(&m);
+
+        if (mbedtls_ecp_group_load(&ctx.grp, MBEDTLS_ECP_DP_CURVE25519) != 0 ||
+            mbedtls_ecdh_gen_public(&ctx.grp, &m, &R, myrand, NULL) != 0 ||
+            mbedtls_ecdh_gen_public(&ctx.grp, &m, &P, myrand, NULL) != 0)
+            mbedtls_exit(1);
+
+        mbedtls_snprintf(title, sizeof(title), "ECPopt");
+        TIME_PUBLIC(title, "mul",
+            ret = mbedtls_ecp_mul(&ctx.grp, &R, &m, &P, NULL, NULL)
+        );
+
+        if (mbedtls_mpi_write_binary(&m, in1, BSZ) != 0)
+            mbedtls_exit(1);
+
+        // mbedtls_ecp_point_write_binary wants an extra leading byte in the buffer.
+        if (mbedtls_ecp_point_write_binary(&ctx.grp, &P, MBEDTLS_ECP_PF_COMPRESSED, &olen, in2, BSZ + 1) != 0)
+            mbedtls_exit(1);
+
+        mbedtls_snprintf(title, sizeof(title), "ECPopt-Hacl");
+        TIME_PUBLIC(title, "mul",
+            Hacl_Curve25519_crypto_scalarmult(out, in1, (in2 + 1));
+        );
+#undef BSZ
     }
 #endif
 
