@@ -1010,8 +1010,8 @@ int main( int argc, char *argv[] )
         {
             mbedtls_ecdh_init( &ecdh_srv );
             mbedtls_ecdh_init( &ecdh_cli );
-            mbedtls_ecdh_setup( &ecdh_srv, curve_info->grp_id );
-            mbedtls_ecdh_setup( &ecdh_cli, curve_info->grp_id );
+            check( mbedtls_ecdh_setup( &ecdh_srv, curve_info->grp_id ) );
+            check( mbedtls_ecdh_setup( &ecdh_cli, curve_info->grp_id ) );
 
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
             if (mbedtls_ecp_group_load(&ecdh_srv.grp, curve_info->grp_id) != 0 ||
