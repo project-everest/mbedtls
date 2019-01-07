@@ -828,6 +828,9 @@ int main( int argc, char *argv[] )
              curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
              curve_info++ )
         {
+            if( mbedtls_ecdsa_can_do( curve_info->grp_id ) == 0 )
+                continue;
+
             mbedtls_ecdsa_init( &ecdsa );
 
             if( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) != 0 )
@@ -847,6 +850,9 @@ int main( int argc, char *argv[] )
              curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
              curve_info++ )
         {
+            if( mbedtls_ecdsa_can_do( curve_info->grp_id ) == 0 )
+                continue;
+
             mbedtls_ecdsa_init( &ecdsa );
 
             if( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) != 0 ||
