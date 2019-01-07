@@ -221,11 +221,13 @@ static int myrand( void *rng_state, unsigned char *output, size_t len )
     return( 0 );
 }
 
+#if defined(MBEDTLS_ECDH_C)
 static void check( int r )
 {
     if( r != 0 )
         mbedtls_exit( 1 );
 }
+#endif
 
 /*
  * Clear some memory that was used to prepare the context
