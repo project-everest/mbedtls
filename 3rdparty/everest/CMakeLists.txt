@@ -8,8 +8,8 @@ if (${CMAKE_LIBRARY_ARCHITECTURE} STREQUAL "x86_64-linux-gnu")
 list(APPEND src_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/Hacl_Curve25519.c)
 else()
 add_definitions(-DKRML_VERIFIED_UINT128)
-list(APPEND src_everest 
-  ${CMAKE_CURRENT_SOURCE_DIR}/library/legacy/Hacl_Curve25519.c 
+list(APPEND src_everest
+  ${CMAKE_CURRENT_SOURCE_DIR}/library/legacy/Hacl_Curve25519.c
   ${CMAKE_CURRENT_SOURCE_DIR}/library/kremlib/FStar_UInt128_extracted.c
 )
 endif()
