@@ -167,7 +167,7 @@ else()
     set(LIB_INSTALL_DIR lib)
 endif()
 
-include_directories(include/ 3rdparty/everest/include/ 3rdparty/everest/include/everest/ 3rdparty/everest/include/everest/kremlin/ 3rdparty/everest/include/everest/kremlib/)
+include_directories(include/)
 
 if(ENABLE_ZLIB_SUPPORT)
     find_package(ZLIB)
@@ -178,6 +178,10 @@ if(ENABLE_ZLIB_SUPPORT)
 endif(ENABLE_ZLIB_SUPPORT)
 
 add_subdirectory(3rdparty)
+include_directories(${thirdparty_inc})
+list(APPEND libs ${thirdparty_lib})
+add_definitions(${thirdparty_def})
+
 add_subdirectory(library)
 add_subdirectory(include)
 
