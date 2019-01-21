@@ -64,7 +64,6 @@ set(src_crypto
     version.c
     version_features.c
     xtea.c
-    ${src_thirdparty}
 )
 
 set(src_x509
