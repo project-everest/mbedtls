@@ -441,15 +441,9 @@ void mbedtls_debug_printf_ecdh( const mbedtls_ssl_context *ssl, int level,
 #else
     switch( ecdh->var )
     {
-        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
-            mbedtls_debug_printf_ecdh_internal( ssl, level, file, line, ecdh, attr );
-            return;
-        case MBEDTLS_ECDH_VARIANT_NONE:
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECDH_VARIANT_EVEREST:
-#endif
         default:
-            return;
+            mbedtls_debug_printf_ecdh_internal( ssl, level, file, line, ecdh,
+                                                attr );
     }
 #endif
 }

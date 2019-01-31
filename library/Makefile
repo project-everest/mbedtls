@@ -37,7 +37,7 @@ LOCAL_CFLAGS += -fPIC -fpic
 endif
 endif
 
-SOEXT_TLS=so.11
+SOEXT_TLS=so.12
 SOEXT_X509=so.0
 SOEXT_CRYPTO=so.3
 
@@ -110,6 +110,10 @@ OBJS_TLS=	debug.o		net_sockets.o		\
 		ssl_cli.o	ssl_cookie.o		\
 		ssl_srv.o	ssl_ticket.o		\
 		ssl_tls.o
+
+include ../3rdparty/Makefile.inc
+LOCAL_CFLAGS+=$(THIRDPARTY_INCLUDES)
+OBJS_CRYPTO+=$(THIRDPARTY_OBJECTS)
 
 .SILENT:
 
@@ -209,13 +213,10 @@ libmbedcrypto.dll: $(OBJS_CRYPTO)
 
 .c.o:
 	echo "  CC    $<"
-	#echo $(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 
 .S.o:
 	echo "  CC    $<"
-	#echo $(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
-	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 
 clean:
 ifndef WINDOWS

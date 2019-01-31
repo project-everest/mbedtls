@@ -223,6 +223,14 @@ static int myrand( void *rng_state, unsigned char *output, size_t len )
     return( 0 );
 }
 
+#if defined(MBEDTLS_ECDH_C)
+static void check( int r )
+{
+    if( r != 0 )
+        mbedtls_exit( 1 );
+}
+#endif
+
 /*
  * Clear some memory that was used to prepare the context
  */
@@ -719,7 +727,6 @@ int main( int argc, char *argv[] )
             mbedtls_exit(1);
         TIME_AND_TSC( "HMAC_DRBG SHA-1 (NOPR)",
                 mbedtls_hmac_drbg_random( &hmac_drbg, buf, BUFSIZE ) );
-        mbedtls_hmac_drbg_free( &hmac_drbg );
 
         if( mbedtls_hmac_drbg_seed( &hmac_drbg, md_info, myrand, NULL, NULL, 0 ) != 0 )
             mbedtls_exit(1);
@@ -727,7 +734,6 @@ int main( int argc, char *argv[] )
                                              MBEDTLS_HMAC_DRBG_PR_ON );
         TIME_AND_TSC( "HMAC_DRBG SHA-1 (PR)",
                 mbedtls_hmac_drbg_random( &hmac_drbg, buf, BUFSIZE ) );
-        mbedtls_hmac_drbg_free( &hmac_drbg );
 #endif
 
 #if defined(MBEDTLS_SHA256_C)
@@ -738,7 +744,6 @@ int main( int argc, char *argv[] )
             mbedtls_exit(1);
         TIME_AND_TSC( "HMAC_DRBG SHA-256 (NOPR)",
                 mbedtls_hmac_drbg_random( &hmac_drbg, buf, BUFSIZE ) );
-        mbedtls_hmac_drbg_free( &hmac_drbg );
 
         if( mbedtls_hmac_drbg_seed( &hmac_drbg, md_info, myrand, NULL, NULL, 0 ) != 0 )
             mbedtls_exit(1);
@@ -746,8 +751,8 @@ int main( int argc, char *argv[] )
                                              MBEDTLS_HMAC_DRBG_PR_ON );
         TIME_AND_TSC( "HMAC_DRBG SHA-256 (PR)",
                 mbedtls_hmac_drbg_random( &hmac_drbg, buf, BUFSIZE ) );
-        mbedtls_hmac_drbg_free( &hmac_drbg );
 #endif
+        mbedtls_hmac_drbg_free( &hmac_drbg );
     }
 #endif
 
@@ -844,6 +849,9 @@ int main( int argc, char *argv[] )
              curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
              curve_info++ )
         {
+            if( mbedtls_ecdsa_can_do( curve_info->grp_id ) == 0 )
+                continue;
+
             mbedtls_ecdsa_init( &ecdsa );
 
             if( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) != 0 )
@@ -863,6 +871,9 @@ int main( int argc, char *argv[] )
              curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
              curve_info++ )
         {
+            if( mbedtls_ecdsa_can_do( curve_info->grp_id ) == 0 )
+                continue;
+
             mbedtls_ecdsa_init( &ecdsa );
 
             if( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) != 0 ||
@@ -1005,7 +1016,7 @@ int main( int argc, char *argv[] )
     }
 #endif
 
-#if defined(MBEDTLS_ECDH_C) && !defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+#if defined(MBEDTLS_ECDH_C)
     if( todo.ecdh )
     {
         mbedtls_ecdh_context ecdh_srv, ecdh_cli;
@@ -1020,28 +1031,35 @@ int main( int argc, char *argv[] )
         {
             mbedtls_ecdh_init( &ecdh_srv );
             mbedtls_ecdh_init( &ecdh_cli );
-            mbedtls_ecdh_setup( &ecdh_srv, curve_info->grp_id );
-            mbedtls_ecdh_setup( &ecdh_cli, curve_info->grp_id );
+            check( mbedtls_ecdh_setup( &ecdh_srv, curve_info->grp_id ) );
+            check( mbedtls_ecdh_setup( &ecdh_cli, curve_info->grp_id ) );
 
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+            if (mbedtls_ecp_group_load(&ecdh_srv.grp, curve_info->grp_id) != 0 ||
+                mbedtls_ecdh_gen_public(&ecdh_srv.grp,
+                    &ecdh_srv.d,
+                    &ecdh_srv.Q, myrand, NULL) != 0)
+#else
             if( ecdh_srv.var == MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0 && (
                 mbedtls_ecp_group_load( &ecdh_srv.ctx.mbed_ecdh.grp, curve_info->grp_id ) != 0 ||
                 mbedtls_ecdh_gen_public( &ecdh_srv.ctx.mbed_ecdh.grp,
                                          &ecdh_srv.ctx.mbed_ecdh.d,
                                          &ecdh_srv.ctx.mbed_ecdh.Q, myrand, NULL ) != 0 ))
+#endif
                 mbedtls_exit( 1 );
 
             mbedtls_snprintf( title, sizeof( title ), "ECDHE-%s", curve_info->name );
-            TIME_PUBLIC( title, "handshake",
+            TIME_PUBLIC( title, "full handshake",
                 const unsigned char * p_srv = buf_srv;
-                ret |= mbedtls_ecdh_make_params( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL );
+                check( mbedtls_ecdh_make_params( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL ) );
 
-                ret |= mbedtls_ecdh_read_params( &ecdh_cli, &p_srv, p_srv + olen );
-                ret |= mbedtls_ecdh_make_public( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL );
+                check( mbedtls_ecdh_read_params( &ecdh_cli, &p_srv, p_srv + olen ) );
+                check( mbedtls_ecdh_make_public( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL ) );
 
-                ret |= mbedtls_ecdh_read_public( &ecdh_srv, buf_cli, olen );
-                ret |= mbedtls_ecdh_calc_secret( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL );
+                check( mbedtls_ecdh_read_public( &ecdh_srv, buf_cli, olen ) );
+                check( mbedtls_ecdh_calc_secret( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL ) );
 
-                ret |= mbedtls_ecdh_calc_secret( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL );
+                check( mbedtls_ecdh_calc_secret( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL ) );
             );
 
             mbedtls_ecdh_free( &ecdh_srv );
@@ -1049,7 +1067,6 @@ int main( int argc, char *argv[] )
         }
     }
 #endif
-
 
 #define TIME_AND_TSC_CNT( TITLE, CNT, CODE )                            \
 do {                                                                    \
