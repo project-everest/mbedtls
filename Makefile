@@ -24,7 +24,7 @@ ifndef WINDOWS
 install: no_test
 	mkdir -p $(DESTDIR)/include/mbedtls
 	cp -rp include/mbedtls $(DESTDIR)/include
-	cp -rp include/everest $(DESTDIR)/include
+	cp -rp 3rdparty/everest/include/everest $(DESTDIR)/include
 
 	mkdir -p $(DESTDIR)/lib
 	cp -RP library/libmbedtls.*    $(DESTDIR)/lib

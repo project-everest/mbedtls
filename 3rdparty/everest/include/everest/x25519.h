@@ -22,6 +22,8 @@
 #ifndef MBEDTLS_X25519_H
 #define MBEDTLS_X25519_H
 
+#include "mbedtls/ecp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

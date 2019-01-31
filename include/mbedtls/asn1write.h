@@ -143,7 +143,7 @@ int mbedtls_asn1_write_oid( unsigned char **p, unsigned char *start,
  * \param oid_len   The length of the algorithm's OID.
  * \param par_len   The length of the parameters, which must be already written.
  *                  If 0, NULL parameters are added
- *  * \param include_params boolean to determine whether a NULL should be added if the
+ * \param include_params boolean to determine whether a NULL should be added if the
  *                  length of parameters is zero (Note: EdDSA requires empty parameters;
  *                  RFC8410: '... the parameters MUST be absent'.)
  *

@@ -9028,7 +9028,9 @@ static int ssl_preset_default_hashes[] = {
 #endif
 
 static int ssl_preset_suiteb_ciphersuites[] = {
+#if defined(MBEDTLS_EDDSA_C)
     MBEDTLS_TLS_ECDHE_EDDSA_WITH_AES_128_GCM_SHA256,
+#endif
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
     MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     0

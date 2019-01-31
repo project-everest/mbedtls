@@ -121,7 +121,6 @@ typedef struct mbedtls_ecdh_context
     mbedtls_ecp_point Vi;    /*!< The blinding value. */
     mbedtls_ecp_point Vf;    /*!< The unblinding value. */
     mbedtls_mpi _d;          /*!< The previous \p d. */
-
 #if defined(MBEDTLS_ECP_RESTARTABLE)
     int restart_enabled;        /*!< The flag for restartable mode. */
     mbedtls_ecp_restart_ctx rs; /*!< The restart context for EC computations. */

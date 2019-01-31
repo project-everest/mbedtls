@@ -178,6 +178,38 @@ static int ecdh_setup_internal( mbedtls_ecdh_context_mbed *ctx,
     }
 
     return( 0 );
+}
+
+/*
+ * Setup context
+ */
+int mbedtls_ecdh_setup( mbedtls_ecdh_context *ctx, mbedtls_ecp_group_id grp_id )
+{
+    if( ctx == NULL )
+        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
+    return( ecdh_setup_internal( ctx, grp_id ) );
+#else
+    switch( grp_id )
+    {
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+    case MBEDTLS_ECP_DP_CURVE25519:
+        ctx->point_format = MBEDTLS_ECP_PF_COMPRESSED;
+        ctx->var = MBEDTLS_ECDH_VARIANT_EVEREST;
+        ctx->grp_id = grp_id;
+        return( mbedtls_everest_setup( &ctx->ctx.everest_ecdh, grp_id ) );
+#endif
+    default:
+        ctx->point_format = MBEDTLS_ECP_PF_UNCOMPRESSED;
+        ctx->var = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
+        ctx->grp_id = grp_id;
+        ecdh_init_internal( &ctx->ctx.mbed_ecdh );
+        return( ecdh_setup_internal( &ctx->ctx.mbed_ecdh, grp_id ) );
+    }
+#endif
+}
+
 static void ecdh_free_internal( mbedtls_ecdh_context_mbed *ctx )
 {
     mbedtls_ecp_group_free( &ctx->grp );
@@ -212,7 +244,7 @@ void mbedtls_ecdh_free( mbedtls_ecdh_context *ctx )
     if( ctx == NULL )
         return;
 
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)7
+#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
     mbedtls_ecp_point_free( &ctx->Vi );
     mbedtls_ecp_point_free( &ctx->Vf );
     mbedtls_mpi_free( &ctx->_d );
@@ -395,14 +427,14 @@ static int ecdh_get_params_internal( mbedtls_ecdh_context_mbed *ctx,
 
     /* If it's not our key, just import the public part as Qp */
     if( side == MBEDTLS_ECDH_THEIRS )
-        return( mbedtls_ecp_copy( &real_ctx->Qp, &key->Q ) );
+        return( mbedtls_ecp_copy( &ctx->Qp, &key->Q ) );
 
     /* Our key: import public (as Q) and private parts */
     if( side != MBEDTLS_ECDH_OURS )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    if( ( ret = mbedtls_ecp_copy( &real_ctx->Q, &key->Q ) ) != 0 ||
-        ( ret = mbedtls_mpi_copy( &real_ctx->d, &key->d ) ) != 0 )
+    if( ( ret = mbedtls_ecp_copy( &ctx->Q, &key->Q ) ) != 0 ||
+        ( ret = mbedtls_mpi_copy( &ctx->d, &key->d ) ) != 0 )
         return( ret );
 
     return( 0 );
@@ -495,25 +527,6 @@ int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
 {
     int restart_enabled = 0;
 
-    if( real_ctx->grp.pbits == 0 )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-    if( ( ret = mbedtls_ecdh_gen_public( &real_ctx->grp, &real_ctx->d,
-                                         &real_ctx->Q, f_rng, p_rng ) ) != 0 )
-        return( ret );
-
-    return mbedtls_ecp_tls_write_point( &real_ctx->grp, &real_ctx->Q,
-                                        ctx->point_format, olen, buf, blen );
-}
-
-/*
- * Setup and export the client public value
- */
-int mbedtls_ecdh_make_public( mbedtls_ecdh_context *ctx, size_t *olen,
-                              unsigned char *buf, size_t blen,
-                              int (*f_rng)(void *, unsigned char *, size_t),
-                              void *p_rng )
-{
     if( ctx == NULL )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
@@ -626,41 +639,11 @@ static int ecdh_calc_secret_internal( mbedtls_ecdh_context_mbed *ctx,
     }
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 
-    if( mbedtls_mpi_size( &real_ctx->z ) > blen )
+    if( mbedtls_mpi_size( &ctx->z ) > blen )
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
-    *olen = real_ctx->grp.pbits / 8 + ( ( real_ctx->grp.pbits % 8 ) != 0 );
-    return mbedtls_mpi_write_binary( &real_ctx->z, buf, *olen );
-}
-
-/*
- * Derive and export the shared secret
- */
-int mbedtls_ecdh_calc_secret( mbedtls_ecdh_context *ctx, size_t *olen,
-                              unsigned char *buf, size_t blen,
-                              int (*f_rng)(void *, unsigned char *, size_t),
-                              void *p_rng )
-{
-    if( ctx == NULL )
-        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
-
-#if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
-    return( mbedtls_ecdh_calc_secret_internal( ctx, olen, buf, blen, f_rng,
-                                               p_rng ) );
-#else
-    switch( ctx->var )
-    {
-#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
-        case MBEDTLS_ECDH_VARIANT_EVEREST:
-            return( mbedtls_everest_calc_secret( ctx, olen, buf, blen, f_rng, p_rng ) );
-#endif
-        case MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0:
-            return( mbedtls_ecdh_calc_secret_internal( ctx, olen, buf, blen,
-                                                       f_rng, p_rng ) );
-        default:
-            return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-#endif
+    *olen = ctx->grp.pbits / 8 + ( ( ctx->grp.pbits % 8 ) != 0 );
+    return mbedtls_mpi_write_binary( &ctx->z, buf, *olen );
 }
 
 /*

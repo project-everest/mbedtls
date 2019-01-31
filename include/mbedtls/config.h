@@ -3168,30 +3168,12 @@
 //#define MBEDTLS_PLATFORM_GMTIME_R_ALT
 
 /**
+ * \def MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
+ *
  * Enable the verified implementations of crypto primitives
  * from Project Everest (currently only Curve25519).
  * This feature breaks ECDH backward compatibility (see also
  * MBEDTLS_ECDH_LEGACY_CONTEXT).
- *
- */
-//#define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
-
-/* \} name SECTION: Customisation configuration options */
-
-/* Target and application specific configurations
- *
- * Allow user to override any previous default.
- *
- */
-#if defined(MBEDTLS_USER_CONFIG_FILE)
-#include MBEDTLS_USER_CONFIG_FILE
-#endif
-
-/**
- * \def MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
- *
- * Enable the verified implementations of crypto primitives
- * from Project Everest (currently only x25519).
  *
  */
 #define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
@@ -3204,6 +3186,17 @@
  *
  */
 #define MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM
+
+/* \} name SECTION: Customisation configuration options */
+
+/* Target and application specific configurations
+ *
+ * Allow user to override any previous default.
+ *
+ */
+#if defined(MBEDTLS_USER_CONFIG_FILE)
+#include MBEDTLS_USER_CONFIG_FILE
+#endif
 
 #include "check_config.h"
 

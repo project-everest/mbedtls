@@ -170,7 +170,6 @@ int mbedtls_gcm_setkey( mbedtls_gcm_context *ctx,
     const mbedtls_cipher_info_t *cipher_info;
 
     cipher_info = mbedtls_cipher_info_from_values( cipher, keybits, MBEDTLS_MODE_ECB );
-
     if( cipher_info == NULL )
         return( MBEDTLS_ERR_GCM_BAD_INPUT );
 
@@ -183,7 +182,7 @@ int mbedtls_gcm_setkey( mbedtls_gcm_context *ctx,
         return( ret );
 
     if( ( ret = mbedtls_cipher_setkey( &ctx->cipher_ctx, key, keybits,
-        MBEDTLS_ENCRYPT ) ) != 0 )
+                               MBEDTLS_ENCRYPT ) ) != 0 )
     {
         return( ret );
     }
@@ -347,7 +346,7 @@ int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
     }
 
     if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->base_ectr,
-        &olen ) ) != 0 )
+                             &olen ) ) != 0 )
     {
         return( ret );
     }
