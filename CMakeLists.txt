@@ -177,6 +177,11 @@ if(ENABLE_ZLIB_SUPPORT)
     endif(ZLIB_FOUND)
 endif(ENABLE_ZLIB_SUPPORT)
 
+execute_process(COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/config.pl -f ${CMAKE_CURRENT_SOURCE_DIR}/include/mbedtls/config.h get MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM RESULT_VARIABLE result)
+if(${result} EQUAL 0)
+  enable_language(ASM)
+endif()
+
 add_subdirectory(3rdparty)
 include_directories(${thirdparty_inc})
 list(APPEND libs ${thirdparty_lib})

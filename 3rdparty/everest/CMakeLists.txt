@@ -2,7 +2,8 @@ list (APPEND everest_src)
 list (APPEND everest_inc)
 list (APPEND everest_def)
 
-execute_process(COMMAND ${PERL_EXECUTABLE} ../scripts/config.pl -f ../include/mbedtls/config.h get MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED RESULT_VARIABLE result)
+set(ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+execute_process(COMMAND ${PERL_EXECUTABLE} ${ROOT}/scripts/config.pl -f ${ROOT}/include/mbedtls/config.h get MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED RESULT_VARIABLE result)
 
 if(${result} EQUAL 0)
   set(everest_src
@@ -13,7 +14,8 @@ if(${result} EQUAL 0)
   )
 
   if (${CMAKE_LIBRARY_ARCHITECTURE} STREQUAL "x86_64-linux-gnu")
-  list(APPEND everest_src ${CMAKE_CURRENT_SOURCE_DIR}/library/Hacl_Curve25519.c)
+  list(APPEND everest_src
+    ${CMAKE_CURRENT_SOURCE_DIR}/library/Hacl_Curve25519.c)
   else()
   list(APPEND everest_def -DKRML_VERIFIED_UINT128)
   list(APPEND everest_src
@@ -22,29 +24,31 @@ if(${result} EQUAL 0)
   )
   endif()
 
-  list(APPEND everest_inc ${CMAKE_CURRENT_SOURCE_DIR}/../../include ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include/everest ${CMAKE_CURRENT_SOURCE_DIR}/include/everest/kremlib)
+  list(APPEND everest_inc ${ROOT}/include ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include/everest ${CMAKE_CURRENT_SOURCE_DIR}/include/everest/kremlib)
 
-  execute_process(COMMAND ${PERL_EXECUTABLE} ../../scripts/config.pl -f ../../include/mbedtls/config.h get MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM RESULT_VARIABLE result)
+  execute_process(COMMAND ${PERL_EXECUTABLE} ${ROOT}/scripts/config.pl -f ${ROOT}/include/mbedtls/config.h get MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM RESULT_VARIABLE result)
   if(${result} EQUAL 0)
-    enable_language(ASM)
     if(CMAKE_COMPILER_IS_MSVC)
-      list(APPEND src_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm.asm)
+      list(APPEND everest_src ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm.asm)
     elseif(WIN32)
-      list(APPEND src_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-gcc.S)
+      list(APPEND everest_src ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-gcc.S)
     elseif(APPLE)
-      list(APPEND src_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-osx.S)
+      list(APPEND everest_src ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-osx.S)
+    elseif (${CMAKE_LIBRARY_ARCHITECTURE} STREQUAL "x86_64-linux-gnu")
+      list(APPEND everest_src ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-linux.S)
     else(CMAKE_COMPILER_IS_MSVC)
-      list(APPEND src_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-linux.S)
+      # Nothing.
     endif(CMAKE_COMPILER_IS_MSVC)
   endif()
 
-  execute_process(COMMAND ${PERL_EXECUTABLE} ../../scripts/config.pl -f ../../include/mbedtls/config.h get MBEDTLS_EDDSA_C RESULT_VARIABLE result)
+  execute_process(COMMAND ${PERL_EXECUTABLE} ${ROOT}/scripts/config.pl -f ${ROOT}/include/mbedtls/config.h get MBEDTLS_EDDSA_C RESULT_VARIABLE result)
   if(${result} EQUAL 0)
-  list(APPEND src_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/Hacl_Ed25519.c)
+    if (${CMAKE_LIBRARY_ARCHITECTURE} STREQUAL "x86_64-linux-gnu")
+      list(APPEND everest_src ${CMAKE_CURRENT_SOURCE_DIR}/library/Hacl_Ed25519.c)
+    else()
+      list(APPEND everest_src ${CMAKE_CURRENT_SOURCE_DIR}/library/legacy/Hacl_Ed25519.c)
+    endif()
   endif()
-
-  add_library(everest STATIC ${src_everest})
-  set_target_properties(everest PROPERTIES INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../../include;${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_SOURCE_DIR}/include/everest;${CMAKE_CURRENT_SOURCE_DIR}/include/everest/kremlib")
 
   if(INSTALL_MBEDTLS_HEADERS)
 

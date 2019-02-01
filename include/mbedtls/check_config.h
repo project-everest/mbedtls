@@ -698,8 +698,14 @@ typedef int mbedtls_iso_c_forbids_empty_translation_units;
 #if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
 #if !defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
 #error "MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM requires MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED"
-#elif (defined( _MSC_VER ) && !defined( _M_X64 ))
+#elif (defined( _MSC_VER ) && !defined( _M_X64 )) || (!(defined(__amd64__) || defined(__x86_64__)))
 #undef MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM
+#endif
+#endif
+
+#if defined(MBEDTLS_EDDSA_C)
+#if !defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED)
+#error "MBEDTLS_EDDSA_C requires MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED"
 #endif
 #endif
 
