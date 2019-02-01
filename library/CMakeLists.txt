@@ -67,6 +67,8 @@ set(src_crypto
     eddsa.c
 )
 
+list(APPEND src_crypto ${thirdparty_src})
+
 set(src_x509
     certs.c
     pkcs11.c

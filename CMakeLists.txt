@@ -178,8 +178,9 @@ if(ENABLE_ZLIB_SUPPORT)
 endif(ENABLE_ZLIB_SUPPORT)
 
 add_subdirectory(3rdparty)
-include_directories(${thirdparty_includes})
-set(libs ${libs} ${thirdparty_libs})
+include_directories(${thirdparty_inc})
+list(APPEND libs ${thirdparty_lib})
+add_definitions(${thirdparty_def})
 
 add_subdirectory(library)
 add_subdirectory(include)

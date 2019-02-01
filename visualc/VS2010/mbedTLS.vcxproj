@@ -333,17 +333,6 @@
     <ClCompile Include="..\..\3rdparty\everest\library\kremlib\FStar_UInt64_FStar_UInt32_FStar_UInt16_FStar_UInt8.c" />
     <ClCompile Include="..\..\3rdparty\everest\library\legacy\Hacl_Curve25519.c" />
   </ItemGroup>
-  <ItemGroup>
-    <MASM Include="..\..\library\everest\aesgcm.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </ExcludedFromBuild>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DeploymentContent>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </MASM>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
