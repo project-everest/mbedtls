@@ -22,6 +22,14 @@ Security
    * Wipe sensitive buffers on the stack in the CTR_DRBG and HMAC_DRBG
      modules.
 
+Features
+   * New implementation of X25519 (ECDH using Curve25519) from Project Everest
+     (https://project-everest.github.io/). It can be enabled at compile time
+     with MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED. This implementation is formally
+     verified and significantly faster, but is only supported on x86 platforms
+     (32-bit and 64-bit) using GCC, Clang or Visual Studio. Contributed by
+     Christoph Wintersteiger from Microsoft Research.
+
 API Changes
    * The following functions in the random generator modules have been
      deprecated and replaced as shown below. The new functions change
