@@ -46,6 +46,13 @@ typedef mbedtls_ecdh_context mbedtls_ecdh_context_mbed;
 #endif
 #endif
 
+int mbedtls_ecdh_can_do( mbedtls_ecp_group_id gid )
+{
+    /* At this time, all groups support ECDH. */
+    (void) gid;
+    return 1;
+}
+
 #if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)
 /*
  * Generate public key (restartable version)
