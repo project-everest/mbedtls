@@ -128,7 +128,7 @@ class TabIssueTracker(IssueTracker):
         super().__init__()
         self.heading = "Tabs present:"
         self.files_exemptions = [
-            "Makefile", "generate_visualc_files.pl"
+            "Makefile", "Makefile.inc", "generate_visualc_files.pl"
         ]
 
     def issue_with_line(self, line):
@@ -179,7 +179,7 @@ class IntegrityChecker(object):
         self.setup_logger(log_file)
         self.files_to_check = (
             ".c", ".h", ".sh", ".pl", ".py", ".md", ".function", ".data",
-            "Makefile", "CMakeLists.txt", "ChangeLog"
+            "Makefile", "Makefile.inc", "CMakeLists.txt", "ChangeLog"
         )
         self.excluded_directories = ['.git', 'mbed-os']
         self.excluded_paths = list(map(os.path.normpath, [
