@@ -160,14 +160,14 @@ static void ecdh_init_internal( mbedtls_ecdh_context_mbed *ctx )
  */
 void mbedtls_ecdh_init( mbedtls_ecdh_context *ctx )
 {
+    memset( ctx, 0, sizeof( mbedtls_ecdh_context ) );
+
 #if defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
     ecdh_init_internal( ctx );
     mbedtls_ecp_point_init( &ctx->Vi  );
     mbedtls_ecp_point_init( &ctx->Vf  );
     mbedtls_mpi_init( &ctx->_d );
 #else
-    memset( ctx, 0, sizeof( mbedtls_ecdh_context ) );
-
     ctx->var = MBEDTLS_ECDH_VARIANT_NONE;
 #endif
     ctx->point_format = MBEDTLS_ECP_PF_UNCOMPRESSED;
