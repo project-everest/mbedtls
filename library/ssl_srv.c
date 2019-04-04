@@ -676,10 +676,11 @@ static int ssl_parse_alpn_ext( mbedtls_ssl_context *ssl,
  * Return 0 if the given key uses one of the acceptable curves, -1 otherwise
  */
 #if defined(MBEDTLS_ECDSA_C) || defined(MBEDTLS_EDDSA_C)
-static int ssl_check_key_curve( mbedtls_ecp_group_id grp_id,
+static int ssl_check_key_curve( mbedtls_pk_context *pk,
                                 const mbedtls_ecp_curve_info **curves )
 {
     const mbedtls_ecp_curve_info **crv = curves;
+    mbedtls_ecp_group_id grp_id = mbedtls_pk_ec( *pk )->grp.id;
 
     if( crv == NULL )
         return( -1 );
@@ -755,11 +756,11 @@ static int ssl_pick_cert( mbedtls_ssl_context *ssl,
         if(
 #if defined(MBEDTLS_ECDSA_C)
             ( pk_alg == MBEDTLS_PK_ECDSA &&
-                ssl_check_key_curve( mbedtls_pk_ec( cur->cert->pk )->grp.id, ssl->handshake->curves ) ) != 0 ||
+                ssl_check_key_curve( &cur->cert->pk, ssl->handshake->curves ) ) != 0 ||
 #endif
 #if defined(MBEDTLS_EDDSA_C)
             ( pk_alg == MBEDTLS_PK_EDDSA &&
-                ssl_check_key_curve( mbedtls_pk_eddsa( cur->cert->pk )->id, ssl->handshake->curves ) ) != 0 ||
+                ssl_check_key_curve( &cur->cert->pk, ssl->handshake->curves ) ) != 0 ||
 #endif
             0
             )
