@@ -1361,7 +1361,6 @@ int mbedtls_pk_parse_key( mbedtls_pk_context *pk,
     else if( ret != MBEDTLS_ERR_PEM_NO_HEADER_FOOTER_PRESENT )
         return( ret );
 
-
 #if defined(MBEDTLS_PKCS12_C) || defined(MBEDTLS_PKCS5_C)
     /* Avoid calling mbedtls_pem_read_buffer() on non-null-terminated string */
     if( keylen == 0 || key[keylen - 1] != '\0' )

@@ -1,3 +1,4 @@
+
 # Also see "include/mbedtls/config.h"
 
 CFLAGS	?= -O2
@@ -16,9 +17,6 @@ endif
 
 # To compile on Plan9:
 # CFLAGS += -D_BSD_EXTENSION
-
-# Include directories for Everest code
-CFLAGS+=-I../include/everest -I../include/everest/kremlin -I../include/everest/kremlib
 
 # if were running on Windows build for Windows
 ifdef WINDOWS
@@ -89,16 +87,10 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		version_features.o		xtea.o \
 		eddsa.o
 
-OBJS_CRYPTO+= everest/everest.o \
-		everest/Hacl_Curve25519.o everest/x25519.o \
-		everest/Hacl_Ed25519.o  \
-		everest/kremlib/FStar_UInt64.o everest/kremlib/c/fstar_uint64.o \
-		everest/kremlib/c/fstar_uint128.o
-
 ifdef APPLE_BUILD
-OBJS_CRYPTO+=everest/aesgcm-osx.o
+THIRDPARTY_CRYPTO_OBJECTS+=../3rdparty/everest/library/aesgcm-osx.o
 else
-OBJS_CRYPTO+=everest/aesgcm-linux.o
+THIRDPARTY_CRYPTO_OBJECTS+=../3rdparty/everest/library/aesgcm-linux.o
 endif
 
 OBJS_X509=	certs.o		pkcs11.o	x509.o		\
@@ -186,7 +178,6 @@ libmbedx509.dll: $(OBJS_X509) libmbedcrypto.dll
 # crypto
 libmbedcrypto.a: $(OBJS_CRYPTO)
 	echo "  AR    $@"
-	#echo $(AR) $(ARFLAGS) $@ $(OBJS_CRYPTO)
 	$(AR) $(ARFLAGS) $@ $(OBJS_CRYPTO)
 ifdef APPLE_BUILD
 ifneq ($(APPLE_BUILD),0)
@@ -227,4 +218,3 @@ ifndef WINDOWS
 else
 	del /Q /F *.o libmbed* $(OBJS_CRYPTO)
 endif
-
