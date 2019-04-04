@@ -227,6 +227,74 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context_everest *ctx, size_t *olen
                                  int( *f_rng )( void *, unsigned char *, size_t ),
                                  void *p_rng );
 
+#if defined(MBEDTLS_ECDH_VARIANT_EVEREST_AES_GCM)
+
+/* Everest AES-GCM  */
+
+typedef unsigned char everest_byte;
+
+typedef struct {
+    everest_byte *plain_ptr;
+    uint64_t plain_num_bytes;
+    everest_byte *auth_ptr;
+    uint64_t auth_num_bytes;
+    everest_byte *iv_ptr;
+    everest_byte *expanded_key_ptr;
+    everest_byte *out_ptr;
+    everest_byte *tag_ptr;
+} vale_args_t;
+
+typedef struct
+{
+    vale_args_t vale_args;
+
+    size_t plain_ptr_size;
+    size_t auth_ptr_size;
+    size_t out_ptr_size;
+    size_t tag_ptr_size;
+    unsigned char iv_buf[16];
+    const unsigned char *key;
+} everest_aes_gcm_args;
+
+void everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize );
+
+extern void aes128_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
+extern void gcm128_encrypt( vale_args_t *a );
+extern int gcm128_decrypt( vale_args_t *a );
+
+extern void aes256_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
+extern void gcm256_encrypt( vale_args_t *a );
+extern int gcm256_decrypt( vale_args_t *a );
+
+struct mbedtls_gcm_context;
+typedef struct mbedtls_gcm_context mbedtls_gcm_context;
+
+void mbedtls_everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize );
+
+int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
+                                    const unsigned char *key,
+                                    unsigned int keybits );
+
+void mbedtls_everest_aes_gcm_wipe_key( mbedtls_gcm_context *ctx );
+
+int mbedtls_everest_aes_gcm_free( mbedtls_gcm_context *ctx);
+
+void mbedtls_everest_prepare_aes_gcm_buffer(
+    unsigned char *inbuf, size_t inbuf_size,
+    unsigned char **argbuf, size_t *argbuf_size,
+    int needs_copy );
+
+void mbedtls_everest_prepare_aes_gcm_buffers(
+    everest_aes_gcm_args * args,
+    size_t length,
+    unsigned char *add, size_t add_len,
+    unsigned char *input,
+    unsigned char *output,
+    size_t tag_len, unsigned char *tag );
+
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
