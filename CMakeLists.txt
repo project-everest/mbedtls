@@ -177,13 +177,14 @@ if(ENABLE_ZLIB_SUPPORT)
     endif(ZLIB_FOUND)
 endif(ENABLE_ZLIB_SUPPORT)
 
+add_subdirectory(include)
+
 add_subdirectory(3rdparty)
 include_directories(${thirdparty_inc})
 list(APPEND libs ${thirdparty_lib})
 add_definitions(${thirdparty_def})
 
 add_subdirectory(library)
-add_subdirectory(include)
 
 if(ENABLE_PROGRAMS)
     add_subdirectory(programs)
