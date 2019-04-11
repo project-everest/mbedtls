@@ -7,8 +7,9 @@ set(everest_src
   ${CMAKE_CURRENT_SOURCE_DIR}/library/x25519.c
   ${CMAKE_CURRENT_SOURCE_DIR}/library/Hacl_Curve25519_joined.c
   ${CMAKE_CURRENT_SOURCE_DIR}/library/Hacl_Ed25519.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/library/evercrypt_vale_stubs.c
   ${CMAKE_CURRENT_SOURCE_DIR}/library/kremlib/FStar_UInt64_FStar_UInt32_FStar_UInt16_FStar_UInt8.c
-	${CMAKE_CURRENT_SOURCE_DIR}/library/kremlib/c/fstar_uint128.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/library/kremlib/fstar_uint128.c
 )
 
 list(APPEND everest_inc ${CMAKE_CURRENT_SOURCE_DIR}/../../include ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include/everest ${CMAKE_CURRENT_SOURCE_DIR}/include/everest/kremlib)
@@ -30,15 +31,19 @@ if(${result} EQUAL 0)
 endif()
 
 if(CMAKE_COMPILER_IS_MSVC)
-set(src_aesgcm_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm.asm)
+set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-msvc.asm
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-msvc.asm)
 elseif(WIN32)
-set(src_aesgcm_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-gcc.S)
+set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-mingw.S
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-mingw.S)
 elseif(APPLE)
-set(src_aesgcm_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-osx.S)
+set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-darwin.S
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-darwin.S)
 else(CMAKE_COMPILER_IS_MSVC)
-set(src_aesgcm_everest ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-linux.S)
+set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-linux.S
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-linux.S)
 endif(CMAKE_COMPILER_IS_MSVC)
 
-set(thirdparty_src ${thirdparty_src} ${everest_src} ${src_aesgcm_everest} PARENT_SCOPE)
+set(thirdparty_src ${thirdparty_src} ${everest_src} ${src_everest_asm} PARENT_SCOPE)
 set(thirdparty_inc ${thirdparty_inc} ${everest_inc} PARENT_SCOPE)
 set(thirdparty_def ${thirdparty_def} ${everest_def} PARENT_SCOPE)

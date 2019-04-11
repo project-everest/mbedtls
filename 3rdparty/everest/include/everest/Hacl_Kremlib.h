@@ -10,12 +10,10 @@
 
 
 
-#ifndef __Hacl_Curve25519_H
-#define __Hacl_Curve25519_H
+#ifndef __Hacl_Kremlib_H
+#define __Hacl_Kremlib_H
 
-#include "Hacl_Kremlib.h"
-#include "Vale.h"
-#include "Vale_Inline.h"
+
 /* #include "libintvector.h" */
 #include "evercrypt_targetconfig.h"
 #include "curve25519-inline.h"
@@ -24,13 +22,36 @@
 #include "kremlin/lowstar_endianness.h"
 #include <string.h>
 
-void Hacl_Curve25519_51_secret_to_public(uint8_t *pub, uint8_t *priv);
+extern uint8_t FStar_UInt8_eq_mask(uint8_t x0, uint8_t x1);
 
-void Hacl_Curve25519_51_ecdh(uint8_t *shared, uint8_t *my_priv, uint8_t *their_pub);
+extern uint64_t FStar_UInt64_eq_mask(uint64_t x0, uint64_t x1);
 
-void Hacl_Curve25519_64_secret_to_public(uint8_t *pub, uint8_t *priv);
+extern uint64_t FStar_UInt64_gte_mask(uint64_t x0, uint64_t x1);
 
-void Hacl_Curve25519_64_ecdh(uint8_t *shared, uint8_t *my_priv, uint8_t *their_pub);
+extern FStar_UInt128_uint128
+FStar_UInt128_add(FStar_UInt128_uint128 x0, FStar_UInt128_uint128 x1);
 
-#define __Hacl_Curve25519_H_DEFINED
+extern FStar_UInt128_uint128 FStar_UInt128_shift_left(FStar_UInt128_uint128 x0, uint32_t x1);
+
+extern FStar_UInt128_uint128 FStar_UInt128_shift_right(FStar_UInt128_uint128 x0, uint32_t x1);
+
+extern FStar_UInt128_uint128 FStar_UInt128_uint64_to_uint128(uint64_t x0);
+
+extern uint64_t FStar_UInt128_uint128_to_uint64(FStar_UInt128_uint128 x0);
+
+extern FStar_UInt128_uint128 FStar_UInt128_mul_wide(uint64_t x0, uint64_t x1);
+
+extern void store128_be(uint8_t *x0, FStar_UInt128_uint128 x1);
+
+extern FStar_UInt128_uint128 FStar_Int_Cast_Full_uint64_to_uint128(uint64_t x0);
+
+extern uint64_t FStar_Int_Cast_Full_uint128_to_uint64(FStar_UInt128_uint128 x0);
+
+extern void portable_exit(int32_t x0);
+
+extern void C_String_print(C_String_t x0);
+
+bool C_Failure_whatever();
+
+#define __Hacl_Kremlib_H_DEFINED
 #endif

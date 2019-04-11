@@ -82,7 +82,7 @@ int mbedtls_x25519_make_params( mbedtls_x25519_context *ctx, size_t *olen,
     *buf++ = MBEDTLS_X25519_KEY_SIZE_BYTES;
 
     base[0] = 9;
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, base );
+    Hacl_Curve25519_64_ecdh( buf, ctx->our_secret, base );
 
     base[0] = 0;
     if( memcmp( buf, base, MBEDTLS_X25519_KEY_SIZE_BYTES) == 0 )
@@ -140,7 +140,7 @@ int mbedtls_x25519_calc_secret( mbedtls_x25519_context *ctx, size_t *olen,
     if( blen < *olen )
         return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, ctx->peer_point);
+    Hacl_Curve25519_64_ecdh( buf, ctx->our_secret, ctx->peer_point);
 
     /* Wipe the DH secret and don't let the peer chose a small subgroup point */
     mbedtls_platform_zeroize( ctx->our_secret, MBEDTLS_X25519_KEY_SIZE_BYTES );
@@ -171,7 +171,7 @@ int mbedtls_x25519_make_public( mbedtls_x25519_context *ctx, size_t *olen,
     *buf++ = MBEDTLS_X25519_KEY_SIZE_BYTES;
 
     base[0] = 9;
-    Hacl_Curve25519_crypto_scalarmult( buf, ctx->our_secret, base );
+    Hacl_Curve25519_64_ecdh( buf, ctx->our_secret, base );
 
     base[0] = 0;
     if( memcmp( buf, base, MBEDTLS_X25519_KEY_SIZE_BYTES ) == 0 )

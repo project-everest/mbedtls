@@ -9,34 +9,30 @@
 */
 
 
+#include "C_Endianness.h"
 
-#ifndef __C_Endianness_H
-#define __C_Endianness_H
+uint32_t index_32_be(uint8_t *b, uint32_t i)
+{
+  return load32_be(b + (uint32_t)4U * i);
+}
 
-#include "FStar_UInt128.h"
-#include <inttypes.h>
-#include <stdbool.h>
-#include "kremlin/internal/compat.h"
-#include "kremlin/lowstar_endianness.h"
-#include "kremlin/internal/types.h"
+uint32_t index_32_le(uint8_t *b, uint32_t i)
+{
+  return load32_le(b + (uint32_t)4U * i);
+}
 
-extern FStar_UInt128_uint128 load128_le(uint8_t *x0);
+uint64_t index_64_be(uint8_t *b, uint32_t i)
+{
+  return load64_be(b + (uint32_t)8U * i);
+}
 
-extern void store128_le(uint8_t *x0, FStar_UInt128_uint128 x1);
+uint64_t index_64_le(uint8_t *b, uint32_t i)
+{
+  return load64_le(b + (uint32_t)8U * i);
+}
 
-extern FStar_UInt128_uint128 load128_be(uint8_t *x0);
+void upd_32_be(uint8_t *b, uint32_t i, uint32_t v1)
+{
+  store32_be(b + (uint32_t)4U * i, v1);
+}
 
-extern void store128_be(uint8_t *x0, FStar_UInt128_uint128 x1);
-
-uint32_t index_32_be(uint8_t *b, uint32_t i);
-
-uint32_t index_32_le(uint8_t *b, uint32_t i);
-
-uint64_t index_64_be(uint8_t *b, uint32_t i);
-
-uint64_t index_64_le(uint8_t *b, uint32_t i);
-
-void upd_32_be(uint8_t *b, uint32_t i, uint32_t v1);
-
-#define __C_Endianness_H_DEFINED
-#endif

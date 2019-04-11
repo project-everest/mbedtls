@@ -10,12 +10,10 @@
 
 
 
-#ifndef __Hacl_Curve25519_H
-#define __Hacl_Curve25519_H
+#ifndef __Vale_Inline_H
+#define __Vale_Inline_H
 
-#include "Hacl_Kremlib.h"
-#include "Vale.h"
-#include "Vale_Inline.h"
+
 /* #include "libintvector.h" */
 #include "evercrypt_targetconfig.h"
 #include "curve25519-inline.h"
@@ -24,13 +22,23 @@
 #include "kremlin/lowstar_endianness.h"
 #include <string.h>
 
-void Hacl_Curve25519_51_secret_to_public(uint8_t *pub, uint8_t *priv);
+static void fsqr_inline(uint64_t *x0, uint64_t *x1, uint64_t *x2);
 
-void Hacl_Curve25519_51_ecdh(uint8_t *shared, uint8_t *my_priv, uint8_t *their_pub);
+static void fsqr2_inline(uint64_t *x0, uint64_t *x1, uint64_t *x2);
 
-void Hacl_Curve25519_64_secret_to_public(uint8_t *pub, uint8_t *priv);
+static void cswap2_inline(uint64_t *x0, uint64_t *x1, uint64_t x2);
 
-void Hacl_Curve25519_64_ecdh(uint8_t *shared, uint8_t *my_priv, uint8_t *their_pub);
+static void fmul_inline(uint64_t *x0, uint64_t *x1, uint64_t *x2, uint64_t *x3);
 
-#define __Hacl_Curve25519_H_DEFINED
+static void fmul2_inline(uint64_t *x0, uint64_t *x1, uint64_t *x2, uint64_t *x3);
+
+static void fmul1_inline(uint64_t *x0, uint64_t *x1, uint64_t x2);
+
+static uint64_t add1_inline(uint64_t *x0, uint64_t *x1, uint64_t x2);
+
+static void fadd_inline(uint64_t *x0, uint64_t *x1, uint64_t *x2);
+
+static void fsub_inline(uint64_t *x0, uint64_t *x1, uint64_t *x2);
+
+#define __Vale_Inline_H_DEFINED
 #endif

@@ -39,7 +39,4 @@
 #include "legacy/Hacl_Curve25519.c"
 #endif
 
-//#include "kremlib/FStar_UInt64_FStar_UInt32_FStar_UInt16_FStar_UInt8.c"
-
 #endif /* defined(MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED) */
-

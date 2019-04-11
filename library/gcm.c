@@ -274,6 +274,8 @@ static void gcm_mult( mbedtls_gcm_context *ctx, const unsigned char x[16],
     PUT_UINT32_BE( zl, output, 12 );
 }
 
+int mbedtls_gcm_set_iv(mbedtls_gcm_context *ctx, const unsigned char *iv, size_t iv_len);
+
 int mbedtls_gcm_set_iv(mbedtls_gcm_context *ctx, const unsigned char *iv, size_t iv_len)
 {
     const unsigned char *p;
@@ -509,8 +511,8 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
         {
             switch( ctx->cipher_ctx.cipher_info->key_bitlen )
             {
-            case 128: gcm128_encrypt( &args->vale_args ); break;
-            case 256: gcm256_encrypt( &args->vale_args ); break;
+            case 128: old_gcm128_encrypt( &args->vale_args ); break;
+            case 256: old_gcm256_encrypt( &args->vale_args ); break;
             default: return( MBEDTLS_ERR_GCM_BAD_INPUT );
             }
             break;
@@ -519,8 +521,8 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
         {
             switch( ctx->cipher_ctx.cipher_info->key_bitlen )
             {
-            case 128: ret = gcm128_decrypt( &args->vale_args ); break;
-            case 256: ret = gcm256_decrypt( &args->vale_args ); break;
+            case 128: ret = old_gcm128_decrypt( &args->vale_args ); break;
+            case 256: ret = old_gcm256_decrypt( &args->vale_args ); break;
             default: return( MBEDTLS_ERR_GCM_BAD_INPUT );
             }
             break;

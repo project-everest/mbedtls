@@ -258,13 +258,13 @@ typedef struct
 
 void everest_aes_gcm_args_init( everest_aes_gcm_args * args, unsigned int keysize );
 
-extern void aes128_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
-extern void gcm128_encrypt( vale_args_t *a );
-extern int gcm128_decrypt( vale_args_t *a );
+extern void old_aes128_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
+extern void old_gcm128_encrypt( vale_args_t *a );
+extern int old_gcm128_decrypt( vale_args_t *a );
 
-extern void aes256_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
-extern void gcm256_encrypt( vale_args_t *a );
-extern int gcm256_decrypt( vale_args_t *a );
+extern void old_aes256_key_expansion( everest_byte *key_ptr, everest_byte *key_expansion_ptr );
+extern void old_gcm256_encrypt( vale_args_t *a );
+extern int old_gcm256_decrypt( vale_args_t *a );
 
 struct mbedtls_gcm_context;
 typedef struct mbedtls_gcm_context mbedtls_gcm_context;

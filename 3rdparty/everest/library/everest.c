@@ -154,14 +154,14 @@ int mbedtls_everest_aes_gcm_setkey( mbedtls_gcm_context *ctx,
             return ( MBEDTLS_ERR_GCM_BAD_INPUT );
         args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
         mbedtls_everest_aes_gcm_args_init( args, 11 );
-        aes128_key_expansion( ( everest_byte * )key, args->vale_args.expanded_key_ptr );
+        old_aes128_key_expansion( ( everest_byte * )key, args->vale_args.expanded_key_ptr );
         break;
     case MBEDTLS_CIPHER_AES_256_ECB:
         if( keybits != 256 )
             return ( MBEDTLS_ERR_GCM_BAD_INPUT );
         args = ( everest_aes_gcm_args * )mbedtls_calloc( 1, sizeof( everest_aes_gcm_args ) );
         mbedtls_everest_aes_gcm_args_init( args, 15 );
-        aes256_key_expansion( ( everest_byte * )key, args->vale_args.expanded_key_ptr );
+        old_aes256_key_expansion( ( everest_byte * )key, args->vale_args.expanded_key_ptr );
         break;
     default:
         return( MBEDTLS_ERR_GCM_BAD_INPUT );
