@@ -88,9 +88,9 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		eddsa.o
 
 ifdef APPLE_BUILD
-THIRDPARTY_CRYPTO_OBJECTS+=../3rdparty/everest/library/aesgcm-osx.o
+THIRDPARTY_CRYPTO_OBJECTS+=../3rdparty/everest/library/aesgcm-x86_64-osx.o
 else
-THIRDPARTY_CRYPTO_OBJECTS+=../3rdparty/everest/library/aesgcm-linux.o
+THIRDPARTY_CRYPTO_OBJECTS+=../3rdparty/everest/library/aesgcm-x86_64-linux.o
 endif
 
 OBJS_X509=	certs.o		pkcs11.o	x509.o		\

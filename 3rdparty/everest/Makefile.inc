@@ -6,4 +6,4 @@ THIRDPARTY_CRYPTO_OBJECTS+= \
 	../3rdparty/everest/library/Hacl_Curve25519_joined.o \
 	../3rdparty/everest/library/Hacl_Ed25519.o \
 	../3rdparty/everest/library/kremlib/FStar_UInt64_FStar_UInt32_FStar_UInt16_FStar_UInt8.o \
-	../3rdparty/everest/library/kremlib/c/fstar_uint128.o
+	../3rdparty/everest/library/kremlib/fstar_uint128.o
