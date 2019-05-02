@@ -229,7 +229,14 @@ void mbedtls_everest_prepare_aes_gcm_buffer(
         }
     }
     else
+    {
+        if (*argbuf_size)
+        {
+                mbedtls_free(*argbuf);
+                *argbuf = NULL;
+        }
         *argbuf_size = 0;
+    }
 }
 
 void mbedtls_everest_prepare_aes_gcm_buffers(
