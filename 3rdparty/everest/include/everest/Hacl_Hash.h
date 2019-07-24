@@ -6,12 +6,10 @@
  */
 
 
-#ifndef __Hacl_Curve25519_H
-#define __Hacl_Curve25519_H
+#ifndef __Hacl_Hash_H
+#define __Hacl_Hash_H
 
 #include "Hacl_Kremlib.h"
-#include "Vale.h"
-#include "Vale_Inline.h"
 #include "evercrypt_targetconfig.h"
 #include "curve25519-inline.h"
 #include "libintvector.h"
@@ -20,31 +18,119 @@
 #include "kremlin/lowstar_endianness.h"
 #include <string.h>
 
-void Hacl_Impl_Curve25519_Field51_fadd(uint64_t *out, uint64_t *f1, uint64_t *f2);
-
-void Hacl_Impl_Curve25519_Field51_fsub(uint64_t *out, uint64_t *f1, uint64_t *f2);
-
-void Hacl_Impl_Curve25519_Field51_fmul(uint64_t *out, uint64_t *f1, uint64_t *f2);
-
-void Hacl_Impl_Curve25519_Field51_fsqr(uint64_t *out, uint64_t *f);
+void Hacl_Hash_MD5_update_multi(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
 
 void
-Hacl_Impl_Curve25519_Finv_fsquare_times_51(
-  uint64_t *o,
-  uint64_t *i,
-  FStar_UInt128_uint128 *tmp,
-  uint32_t n1
+Hacl_Hash_MD5_update_last(uint32_t *s, uint64_t prev_len, uint8_t *input, uint32_t input_len);
+
+void Hacl_Hash_MD5_hash(uint8_t *input, uint32_t input_len, uint8_t *dst);
+
+void Hacl_Hash_Core_MD5_init(uint32_t *s);
+
+void Hacl_Hash_Core_MD5_update(uint32_t *abcd, uint8_t *x);
+
+void Hacl_Hash_Core_MD5_pad(uint64_t len, uint8_t *dst);
+
+void Hacl_Hash_Core_MD5_finish(uint32_t *s, uint8_t *dst);
+
+void Hacl_Hash_SHA1_update_multi(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
+
+void
+Hacl_Hash_SHA1_update_last(uint32_t *s, uint64_t prev_len, uint8_t *input, uint32_t input_len);
+
+void Hacl_Hash_SHA1_hash(uint8_t *input, uint32_t input_len, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA1_init(uint32_t *s);
+
+void Hacl_Hash_Core_SHA1_update(uint32_t *h, uint8_t *l);
+
+void Hacl_Hash_Core_SHA1_pad(uint64_t len, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA1_finish(uint32_t *s, uint8_t *dst);
+
+void Hacl_Hash_SHA2_update_multi_224(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
+
+void Hacl_Hash_SHA2_update_multi_256(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
+
+void Hacl_Hash_SHA2_update_multi_384(uint64_t *s, uint8_t *blocks, uint32_t n_blocks);
+
+void Hacl_Hash_SHA2_update_multi_512(uint64_t *s, uint8_t *blocks, uint32_t n_blocks);
+
+void
+Hacl_Hash_SHA2_update_last_224(
+  uint32_t *s,
+  uint64_t prev_len,
+  uint8_t *input,
+  uint32_t input_len
 );
 
-void Hacl_Impl_Curve25519_Finv_finv_51(uint64_t *o, uint64_t *i, FStar_UInt128_uint128 *tmp);
+void
+Hacl_Hash_SHA2_update_last_256(
+  uint32_t *s,
+  uint64_t prev_len,
+  uint8_t *input,
+  uint32_t input_len
+);
 
-void Hacl_Curve25519_51_secret_to_public(uint8_t *pub, uint8_t *priv);
+void
+Hacl_Hash_SHA2_update_last_384(
+  uint64_t *s,
+  FStar_UInt128_uint128 prev_len,
+  uint8_t *input,
+  uint32_t input_len
+);
 
-void Hacl_Curve25519_51_ecdh(uint8_t *shared, uint8_t *my_priv, uint8_t *their_pub);
+void
+Hacl_Hash_SHA2_update_last_512(
+  uint64_t *s,
+  FStar_UInt128_uint128 prev_len,
+  uint8_t *input,
+  uint32_t input_len
+);
 
-void Hacl_Curve25519_64_secret_to_public(uint8_t *pub, uint8_t *priv);
+void Hacl_Hash_SHA2_hash_224(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
-void Hacl_Curve25519_64_ecdh(uint8_t *shared, uint8_t *my_priv, uint8_t *their_pub);
+void Hacl_Hash_SHA2_hash_256(uint8_t *input, uint32_t input_len, uint8_t *dst);
 
-#define __Hacl_Curve25519_H_DEFINED
+void Hacl_Hash_SHA2_hash_384(uint8_t *input, uint32_t input_len, uint8_t *dst);
+
+void Hacl_Hash_SHA2_hash_512(uint8_t *input, uint32_t input_len, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_init_224(uint32_t *s);
+
+void Hacl_Hash_Core_SHA2_init_256(uint32_t *s);
+
+void Hacl_Hash_Core_SHA2_init_384(uint64_t *s);
+
+void Hacl_Hash_Core_SHA2_init_512(uint64_t *s);
+
+void Hacl_Hash_Core_SHA2_update_224(uint32_t *hash1, uint8_t *block);
+
+void Hacl_Hash_Core_SHA2_update_256(uint32_t *hash1, uint8_t *block);
+
+void Hacl_Hash_Core_SHA2_update_384(uint64_t *hash1, uint8_t *block);
+
+void Hacl_Hash_Core_SHA2_update_512(uint64_t *hash1, uint8_t *block);
+
+void Hacl_Hash_Core_SHA2_pad_224(uint64_t len, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_pad_256(uint64_t len, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_pad_384(FStar_UInt128_uint128 len, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_pad_512(FStar_UInt128_uint128 len, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_finish_224(uint32_t *s, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_finish_256(uint32_t *s, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_finish_384(uint64_t *s, uint8_t *dst);
+
+void Hacl_Hash_Core_SHA2_finish_512(uint64_t *s, uint8_t *dst);
+
+extern uint32_t Hacl_Hash_Core_SHA2_Constants_k224_256[64U];
+
+extern uint64_t Hacl_Hash_Core_SHA2_Constants_k384_512[80U];
+
+#define __Hacl_Hash_H_DEFINED
 #endif

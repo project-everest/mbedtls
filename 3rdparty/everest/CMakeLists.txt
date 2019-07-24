@@ -32,16 +32,20 @@ endif()
 
 if(CMAKE_COMPILER_IS_MSVC)
 set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-msvc.asm
-                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-msvc.asm)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-msvc.asm
+		    ${CMAKE_CURRENT_SOURCE_DIR}/library/oldaesgcm-x86_64-msvc.S)
 elseif(WIN32)
 set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-mingw.S
-                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-mingw.S)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-mingw.S
+		    ${CMAKE_CURRENT_SOURCE_DIR}/library/oldaesgcm-x86_64-mingw.S)
 elseif(APPLE)
 set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-darwin.S
-                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-darwin.S)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-darwin.S
+		    ${CMAKE_CURRENT_SOURCE_DIR}/library/oldaesgcm-x86_64-darwin.S)
 else(CMAKE_COMPILER_IS_MSVC)
 set(src_everest_asm ${CMAKE_CURRENT_SOURCE_DIR}/library/aesgcm-x86_64-linux.S
-                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-linux.S)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/library/curve25519-x86_64-linux.S
+		    ${CMAKE_CURRENT_SOURCE_DIR}/library/oldaesgcm-x86_64-linux.S)
 endif(CMAKE_COMPILER_IS_MSVC)
 
 set(thirdparty_src ${thirdparty_src} ${everest_src} ${src_everest_asm} PARENT_SCOPE)

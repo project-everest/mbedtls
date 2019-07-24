@@ -79,7 +79,8 @@ int mbedtls_eddsa_sign( mbedtls_eddsa_context *ctx,
 
     Hacl_Ed25519_sign( sig,
                        ctx->keys.ed25519.private_,
-                       ( unsigned char* )msg, ( uint32_t )msg_len );
+                       ( uint32_t )msg_len,
+                       ( uint8_t*  )msg );
 
     return( 0 );
 }
@@ -99,9 +100,9 @@ int mbedtls_eddsa_verify( mbedtls_eddsa_context *ctx,
            msg_len < 4294967232 /* 2^32 - 64 */ ) )
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 
-    if( !Hacl_Ed25519_verify( ( unsigned char* )ctx->keys.ed25519.public_,
-        ( unsigned char* )msg, ( uint32_t )msg_len,
-        ( unsigned char* )sig ) )
+    if( !Hacl_Ed25519_verify( ( uint8_t* )ctx->keys.ed25519.public_,
+        ( uint32_t )msg_len, ( uint8_t* )msg, 
+        ( uint8_t* )sig ) )
     {
         return MBEDTLS_ERR_ECP_VERIFY_FAILED;
     }
